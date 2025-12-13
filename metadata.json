@@ -1,0 +1,7 @@
+{
+  "name": "AI Legal Receptionist",
+  "description": "An AI-powered receptionist for law firms that handles after-hours calls, collects client information, and generates case reports using the Gemini 2.5 Native Audio (Live API).",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
