@@ -15,7 +15,14 @@ import {
   BrandingConfig,
   CRMExportStatus,
   CRMIntegrationsState,
-  ReceptionistSettings
+  ReceptionistSettings,
+  FunctionCallArgs,
+  UpdateClientInfoArgs,
+  UpdateCaseDetailsArgs,
+  RequestDocumentsArgs,
+  FlagCaseAsUrgentArgs,
+  BookAppointmentArgs,
+  SendFollowUpEmailArgs
 } from './types';
 import {
   getSystemInstruction,
@@ -32,6 +39,18 @@ import {
   generateFollowUpActions
 } from './services/geminiService';
 import { marked } from 'marked';
+import { logger } from './utils/logger';
+import { validateEmail, validatePhone, validateName } from './utils/validators';
+import {
+  AppError,
+  MicrophonePermissionError,
+  MicrophoneNotFoundError,
+  MicrophoneNotReadableError,
+  AudioContextError,
+  APIError,
+  ErrorCode,
+  getUserFriendlyMessage
+} from './types/errors';
 
 const availableVoices = {
   'Kore': 'Kore (Professional, Clear)',
@@ -212,7 +231,7 @@ const App: React.FC = () => {
         mediaRecorderRef.current.stop();
     }
 
-    liveSessionRef.current?.then(session => session.close()).catch(console.error);
+    liveSessionRef.current?.then(session => session.close()).catch(e => logger.error('Failed to close session', e, 'cleanup'));
     liveSessionRef.current = null;
     
     micStreamRef.current?.getTracks().forEach(track => track.stop());
@@ -223,8 +242,8 @@ const App: React.FC = () => {
         audioWorkletNodeRef.current = null;
     }
 
-    inputAudioContextRef.current?.close().catch(console.error);
-    outputAudioContextRef.current?.close().catch(console.error);
+    inputAudioContextRef.current?.close().catch(e => logger.error('Failed to close input audio context', e, 'cleanup'));
+    outputAudioContextRef.current?.close().catch(e => logger.error('Failed to close output audio context', e, 'cleanup'));
     inputAudioContextRef.current = null;
     outputAudioContextRef.current = null;
     mixedAudioDestinationRef.current = null;
@@ -235,7 +254,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleToolCall = useCallback((fc: FunctionCall) => {
-    console.log("Handling tool call:", fc.name, fc.args);
+    logger.debug(`Handling tool call: ${fc.name}`, fc.args, 'toolCall');
     const result = "ok";
 
     switch (fc.name) {
@@ -258,7 +277,7 @@ const App: React.FC = () => {
       case 'send_follow_up_email':
         break;
       default:
-        console.warn("Unknown function call:", fc.name);
+        logger.warn(`Unknown function call: ${fc.name}`, undefined, 'toolCall');
     }
 
     liveSessionRef.current?.then(session => {
@@ -353,22 +372,26 @@ const App: React.FC = () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micStreamRef.current = stream;
-      } catch (err: any) {
-        let errorMsg = "Microphone Access Error";
-        let detailedMsg = "Please check your browser settings.";
-        
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-             errorMsg = "Microphone Access Denied";
-             detailedMsg = "Please allow microphone access in your browser address bar to proceed.";
-        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-             errorMsg = "Microphone Not Found";
-             detailedMsg = "No audio input device detected. Please check your system settings.";
-        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-             errorMsg = "Microphone Unreadable";
-             detailedMsg = "Your microphone might be in use by another application.";
+      } catch (err: unknown) {
+        let appError: AppError;
+
+        if (err instanceof Error) {
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            appError = new MicrophonePermissionError('User denied microphone access', { originalError: err.name });
+          } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            appError = new MicrophoneNotFoundError('No microphone detected', { originalError: err.name });
+          } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            appError = new MicrophoneNotReadableError('Microphone not readable', { originalError: err.name });
+          } else {
+            appError = new AudioContextError('Failed to initialize microphone', { originalError: err.message });
+          }
+        } else {
+          appError = new AudioContextError('Unknown microphone error');
         }
-        
-        setErrorMessage(`${errorMsg}: ${detailedMsg}`);
+
+        const userFriendlyMsg = getUserFriendlyMessage(appError.code);
+        setErrorMessage(userFriendlyMsg);
+        logger.error('Microphone initialization failed', appError, 'audio');
         setCallState(CallState.ERROR);
         cleanup();
         return;
@@ -391,7 +414,7 @@ const App: React.FC = () => {
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
           onopen: async () => {
-            console.log("Session opened.");
+            logger.info("Gemini Live session opened successfully", undefined, 'session');
             setCallState(CallState.ACTIVE);
             setTimeout(() => {
                 sessionPromise.then(session => {
@@ -401,7 +424,7 @@ const App: React.FC = () => {
                         mimeType: 'audio/pcm;rate=16000',
                     };
                     session.sendRealtimeInput({ media: pcmBlob });
-                }).catch(e => console.error("Failed to send initial silent frame:", e));
+                }).catch(e => logger.warn('Failed to send initial silent frame', e, 'audio'));
             }, 800);
 
             // --- Worklet Setup ---
@@ -446,7 +469,7 @@ const App: React.FC = () => {
               };
               sessionPromise.then((session) => {
                  session.sendRealtimeInput({ media: pcmBlob });
-              }).catch(console.error);
+              }).catch(e => logger.error('Failed to send audio input', e, 'audio'));
             };
             
             micSource.connect(workletNode);
@@ -510,7 +533,7 @@ const App: React.FC = () => {
             }
           },
           onerror: (e: ErrorEvent) => {
-            console.error("Gemini Live API Error:", e);
+            logger.error("Gemini Live API Error", e, 'geminiApi');
             const isInitial = stateRef.current.callState === CallState.CONNECTING;
             const msg = isInitial 
                 ? "Failed to connect to AI Service. Please check your network connection and try again."
