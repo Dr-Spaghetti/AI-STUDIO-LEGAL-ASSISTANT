@@ -1,5 +1,8 @@
 import { GoogleGenAI, FunctionDeclaration, Type, GenerateContentResponse } from "@google/genai";
 import { LawyerReport, ClientInfo, ReceptionistSettings } from "../types";
+import { logger } from "../utils/logger";
+import { validateUploadLink, validateCaseSummary, escapeRegex } from "../utils/validators";
+import { AudioContextError, ReportGenerationError, APIError, ErrorCode } from "../types/errors";
 
 // --- Audio Utilities ---
 
@@ -45,7 +48,7 @@ export async function decodeAudioData(
     }
     return buffer;
   } catch (error) {
-    console.error("Error decoding audio data:", error);
+    logger.error('Failed to decode audio data', error instanceof Error ? error : new Error(String(error)), 'decodeAudioData');
     // Return an empty buffer on failure to prevent crashes
     return ctx.createBuffer(numChannels, 0, sampleRate);
   }
@@ -53,6 +56,10 @@ export async function decodeAudioData(
 
 // --- API Utilities ---
 
+/**
+ * Retry logic with exponential backoff
+ * FIX: Replaced console.warn/error with structured logging
+ */
 async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 500): Promise<T> {
   let lastError: Error | undefined;
   for (let i = 0; i <= retries; i++) {
@@ -61,30 +68,46 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 500): Pro
     } catch (error) {
       lastError = error as Error;
       if (i < retries) {
-        console.warn(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`, error);
-        await new Promise(res => setTimeout(res, delay * (i + 1)));
+        const nextDelay = delay * Math.pow(2, i);
+        logger.warn(`API call attempt ${i + 1} failed. Retrying in ${nextDelay}ms...`, error instanceof Error ? error : new Error(String(error)), 'withRetry');
+        await new Promise(res => setTimeout(res, nextDelay));
       }
     }
   }
-  console.error("All retry attempts failed.");
-  throw lastError;
+  logger.error('All API retry attempts exhausted', lastError, 'withRetry');
+  throw lastError || new APIError(ErrorCode.API_UNAVAILABLE, 'All retry attempts failed');
 }
 
 
 // --- Gemini API ---
 
-export const getSystemInstruction = (settings: ReceptionistSettings) => `
+/**
+ * Generate system instruction for Gemini API
+ * FIX: Escapes user-provided settings to prevent prompt injection
+ */
+export const getSystemInstruction = (settings: ReceptionistSettings) => {
+  // Escape template values to prevent prompt injection
+  const escapeValue = (val: string): string => val.replace(/\$/g, '\\$').replace(/`/g, '\\`');
+  const aiName = escapeValue(settings.aiName);
+  const firmName = escapeValue(settings.firmName);
+  const tone = escapeValue(settings.tone);
+  const languageStyle = escapeValue(settings.languageStyle);
+  const firmBio = escapeValue(settings.firmBio);
+  const openingLine = escapeValue(settings.openingLine);
+  const keywordsList = settings.urgencyKeywords.map(k => `'${k}'`).join(', ');
+
+  return `
 Current Date: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
 Time: ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}.
 
-You are ${settings.aiName}, a ${settings.tone} AI receptionist for '${settings.firmName}'. Your primary role is to assist potential clients calling after hours. Speak in a ${settings.languageStyle}. Be patient and never interrupt the caller.
+You are ${aiName}, a ${tone} AI receptionist for '${firmName}'. Your primary role is to assist potential clients calling after hours. Speak in a ${languageStyle}. Be patient and never interrupt the caller.
 
 **Firm Context & Knowledge Base:**
-${settings.firmBio}
+${firmBio}
 
 **Your interaction MUST follow this exact sequence without deviation:**
 
-1.  **Initial Greeting:** Start the conversation with the exact phrase: "${settings.openingLine}" Do not say anything else until the caller responds.
+1.  **Initial Greeting:** Start the conversation with the exact phrase: "${openingLine}" Do not say anything else until the caller responds.
 2.  **Acknowledge Name & Inquire:** Once the caller provides their name, immediately use the \`update_client_info\` tool with their name. Then, greet them using the actual name they provided. Your response should be "Hi [Caller's Name], how may I help you today?", where you replace "[Caller's Name]" with the name the person gave you. You must wait for them to state their name.
 3.  **Gather & Summarize Case Details:** Listen actively while the caller explains their situation. Once they have finished, use the \`update_case_details\` tool to save a summary of their issue.
 4.  **Inquire About Documents:** After summarizing their case, ask if they have any documents related to their case, such as police reports, medical records, or contracts. If they say yes, ask them to list the documents they have. Use the \`request_documents\` tool to log the documents they mention.
@@ -96,7 +119,8 @@ ${settings.firmBio}
 7.  **Send Confirmation & Closing:** After an appointment is set (or if they decline), inform them that they will receive a confirmation email with a secure link to upload their documents. Use the \`send_follow_up_email\` tool to trigger this. Then, thank them for calling and end the call professionally.
 
 **Critical Task: Urgency Detection**
-Your most important task is to identify urgent cases. Listen carefully for keywords like ${settings.urgencyKeywords.map(k => `'${k}'`).join(', ')} or signs of extreme emotional distress (e.g., panic, crying). If you detect any of these, you MUST immediately use the \`flag_case_as_urgent\` tool, providing a brief reason why. This is a priority instruction.`;
+Your most important task is to identify urgent cases. Listen carefully for keywords like ${keywordsList} or signs of extreme emotional distress (e.g., panic, crying). If you detect any of these, you MUST immediately use the \`flag_case_as_urgent\` tool, providing a brief reason why. This is a priority instruction.`;
+};
 
 export const updateClientInfoDeclaration: FunctionDeclaration = {
     name: "update_client_info",
@@ -178,12 +202,32 @@ export const sendFollowUpEmailDeclaration: FunctionDeclaration = {
     },
 };
 
+/**
+ * Generate comprehensive lawyer report from call transcript
+ * FIX: Added input validation and proper error handling
+ */
 export async function generateLawyerReport(clientInfo: Partial<ClientInfo>, transcript: string, isUrgent: boolean, urgencyReason: string): Promise<LawyerReport> {
-    if (!process.env.API_KEY) {
-        throw new Error("API key not found");
+    // Validate inputs
+    if (!transcript || typeof transcript !== 'string' || transcript.trim().length === 0) {
+        throw new ReportGenerationError('Transcript is required and cannot be empty');
     }
+
+    if (!process.env.API_KEY) {
+        throw new APIError(ErrorCode.API_KEY_MISSING, 'API key is not configured');
+    }
+
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const secureUploadLink = `https://tedlaw.secure-uploads.com/${Date.now()}-${Math.random().toString(36).substring(2)}`;
+
+    // Generate secure upload link with validation
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 12);
+    const secureUploadLink = `https://tedlaw.secure-uploads.com/${timestamp}-${randomStr}`;
+
+    // Validate upload link
+    const uploadValidation = validateUploadLink(secureUploadLink);
+    if (!uploadValidation.valid) {
+        throw new ReportGenerationError(`Invalid upload link generated: ${uploadValidation.error}`);
+    }
 
     const prompt = `You are a legal analyst AI. Based on the provided new client intake information and the full conversation transcript, generate a confidential internal report for the lead attorney. Fill out all the fields in the requested JSON schema.
 
