@@ -556,11 +556,14 @@ const App: React.FC = () => {
     
     // Stop Recorder & Prepare Download
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
         mediaRecorderRef.current.requestData();
-        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const url = URL.createObjectURL(blob);
-        setRecordingUrl(url);
+        mediaRecorderRef.current.stop();
+        // Give a small delay to ensure ondataavailable fires for the last chunk
+        setTimeout(() => {
+             const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+             const url = URL.createObjectURL(blob);
+             setRecordingUrl(url);
+        }, 300);
     }
 
     setCallState(CallState.PROCESSING);
