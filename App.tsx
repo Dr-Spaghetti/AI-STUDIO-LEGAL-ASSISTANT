@@ -22,7 +22,12 @@ import {
   RequestDocumentsArgs,
   FlagCaseAsUrgentArgs,
   BookAppointmentArgs,
-  SendFollowUpEmailArgs
+  SendFollowUpEmailArgs,
+  CallMetrics,
+  CaseRecord,
+  ComplianceSettings,
+  AuditLogEntry,
+  WorkflowItem,
 } from './types';
 import {
   getSystemInstruction,
@@ -90,7 +95,23 @@ const DEFAULT_SETTINGS: ReceptionistSettings = {
     openingLine: "Hi thank you for calling Ted Law Firm. My name is Sarah, may I ask who is calling today?",
     urgencyKeywords: ['court date', 'deadline', 'statute of limitations', 'served papers', 'arrested', 'police'],
     voiceName: 'Kore',
-    firmBio: "We are a boutique law firm specializing in Personal Injury and Family Law. Located at 100 Legal Way, New York, NY."
+    firmBio: "We are a boutique law firm specializing in Personal Injury and Family Law. Located at 100 Legal Way, New York, NY.",
+    // Branding
+    logoUrl: 'https://i.ibb.co/L6V2L1j/ted-law-logo-2.png',
+    practiceArea: 'General Practice',
+    firmTagline: 'Your trusted legal partner',
+    // AI Behavior
+    demoMode: false,
+    conversationTone: 'Professional',
+    responseLength: 'Balanced',
+    empathyLevel: 'Medium',
+    // Call Handling
+    callRecording: true,
+    waveformStyle: 'Standard',
+    afterHoursMode: false,
+    warmTransfer: false,
+    voiceMailTranscription: true,
+    callbackQueue: true,
 };
 
 const App: React.FC = () => {
@@ -154,6 +175,84 @@ const App: React.FC = () => {
   const [showCrmModal, setShowCrmModal] = useState(false);
   const [pendingCrm, setPendingCrm] = useState<keyof CRMIntegrationsState | null>(null);
 
+  // Analytics & Metrics State
+  const [callMetrics, setCallMetrics] = useState<CallMetrics>(() => {
+    try {
+      const saved = localStorage.getItem('callMetrics');
+      return saved ? JSON.parse(saved) : {
+        totalCalls: 36,
+        appointmentsBooked: 9,
+        conversionRate: 25,
+        avgCallDuration: 4.5,
+        pipelineValue: 125000,
+        retainedValue: 88000,
+        lastUpdated: new Date().toISOString(),
+      };
+    } catch {
+      return {
+        totalCalls: 36,
+        appointmentsBooked: 9,
+        conversionRate: 25,
+        avgCallDuration: 4.5,
+        pipelineValue: 125000,
+        retainedValue: 88000,
+        lastUpdated: new Date().toISOString(),
+      };
+    }
+  });
+
+  // Case History State
+  const [cases, setCases] = useState<CaseRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem('caseRecords');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Compliance & Audit State
+  const [complianceSettings, setComplianceSettings] = useState<ComplianceSettings>(() => {
+    try {
+      const saved = localStorage.getItem('complianceSettings');
+      return saved ? JSON.parse(saved) : {
+        hipaaMode: false,
+        phiRedaction: true,
+        legalDisclaimer: true,
+        auditLogging: true,
+        twoPartyConsentStates: ['CA', 'CT', 'FL', 'IL', 'MD', 'MA', 'MT', 'NH', 'PA', 'WA'],
+      };
+    } catch {
+      return {
+        hipaaMode: false,
+        phiRedaction: true,
+        legalDisclaimer: true,
+        auditLogging: true,
+        twoPartyConsentStates: ['CA', 'CT', 'FL', 'IL', 'MD', 'MA', 'MT', 'NH', 'PA', 'WA'],
+      };
+    }
+  });
+
+  // Audit Log State
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem('auditLog');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Workflow State
+  const [workflowItems, setWorkflowItems] = useState<WorkflowItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('workflowItems');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   // Refs
   const liveSessionRef = useRef<LiveSessionPromise | null>(null);
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -193,6 +292,27 @@ const App: React.FC = () => {
   useEffect(() => {
       localStorage.setItem('receptionistSettings', JSON.stringify(settings));
   }, [settings]);
+
+  // Persist new state to localStorage
+  useEffect(() => {
+    localStorage.setItem('callMetrics', JSON.stringify(callMetrics));
+  }, [callMetrics]);
+
+  useEffect(() => {
+    localStorage.setItem('caseRecords', JSON.stringify(cases));
+  }, [cases]);
+
+  useEffect(() => {
+    localStorage.setItem('complianceSettings', JSON.stringify(complianceSettings));
+  }, [complianceSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('auditLog', JSON.stringify(auditLog));
+  }, [auditLog]);
+
+  useEffect(() => {
+    localStorage.setItem('workflowItems', JSON.stringify(workflowItems));
+  }, [workflowItems]);
 
   // Scroll to bottom of transcription
   useEffect(() => {
@@ -650,7 +770,155 @@ const App: React.FC = () => {
     </div>
   );
 
-  const SettingsPanel = () => (
+  const AnalyticsDashboard = () => (
+    <div className="col-span-1 lg:col-span-12 bg-[#1E2128] border border-[#2D3139] rounded-2xl p-8 shadow-xl overflow-y-auto">
+      <div className="flex items-center gap-3 mb-8 border-b border-[#2D3139] pb-4">
+        <h2 className="text-lg font-bold text-white tracking-wide">ANALYTICS DASHBOARD</h2>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-[#16181D] border border-[#2D3139] rounded-lg p-6">
+          <p className="text-xs font-medium text-gray-400 mb-2 uppercase">Total Calls</p>
+          <p className="text-3xl font-bold text-[#00FFA3]">{callMetrics.totalCalls}</p>
+        </div>
+        <div className="bg-[#16181D] border border-[#2D3139] rounded-lg p-6">
+          <p className="text-xs font-medium text-gray-400 mb-2 uppercase">Appointments Booked</p>
+          <p className="text-3xl font-bold text-[#00FFA3]">{callMetrics.appointmentsBooked}</p>
+        </div>
+        <div className="bg-[#16181D] border border-[#2D3139] rounded-lg p-6">
+          <p className="text-xs font-medium text-gray-400 mb-2 uppercase">Conversion Rate</p>
+          <p className="text-3xl font-bold text-[#00FFA3]">{callMetrics.conversionRate.toFixed(1)}%</p>
+        </div>
+        <div className="bg-[#16181D] border border-[#2D3139] rounded-lg p-6">
+          <p className="text-xs font-medium text-gray-400 mb-2 uppercase">Avg Call Duration</p>
+          <p className="text-3xl font-bold text-[#00FFA3]">{callMetrics.avgCallDuration.toFixed(1)}m</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-[#16181D] border border-[#2D3139] rounded-lg p-6">
+          <h3 className="text-sm font-bold text-white mb-4">Revenue & Conversions</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between"><span className="text-xs text-gray-400">Pipeline Value</span><span className="text-sm font-semibold text-[#00FFA3]">${callMetrics.pipelineValue.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-xs text-gray-400">Retained Value</span><span className="text-sm font-semibold text-[#00FFA3]">${callMetrics.retainedValue.toLocaleString()}</span></div>
+            <div className="flex justify-between"><span className="text-xs text-gray-400">Conversion Rate</span><span className="text-sm font-semibold text-[#00FFA3]">{callMetrics.conversionRate.toFixed(1)}%</span></div>
+          </div>
+        </div>
+        <div className="bg-[#16181D] border border-[#2D3139] rounded-lg p-6">
+          <h3 className="text-sm font-bold text-white mb-4">Quick Actions</h3>
+          <div className="space-y-2">
+            <button onClick={() => {setCallMetrics({...callMetrics, totalCalls: callMetrics.totalCalls + 1}); logger.info('Call count incremented');}} className="w-full bg-[#00FFA3]/10 hover:bg-[#00FFA3]/20 border border-[#00FFA3]/30 rounded-lg p-3 text-xs font-semibold text-[#00FFA3] transition-colors">Increment Call Count</button>
+            <button onClick={() => {setCallMetrics({...callMetrics, appointmentsBooked: callMetrics.appointmentsBooked + 1}); logger.info('Appointment booked');}} className="w-full bg-[#00FFA3]/10 hover:bg-[#00FFA3]/20 border border-[#00FFA3]/30 rounded-lg p-3 text-xs font-semibold text-[#00FFA3] transition-colors">Log Appointment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const CaseHistoryPage = () => {
+    const [caseTab, setCaseTab] = useState<'ALL'|'BOOKED'|'FOLLOW-UP'>('ALL');
+    const filteredCases = caseTab === 'ALL' ? cases : cases.filter(c => c.bookingStatus === (caseTab === 'BOOKED' ? 'BOOKED' : 'FOLLOW-UP'));
+
+    return (
+      <div className="col-span-1 lg:col-span-12 bg-[#1E2128] border border-[#2D3139] rounded-2xl p-8 shadow-xl overflow-y-auto">
+        <div className="flex items-center gap-3 mb-8 border-b border-[#2D3139] pb-4">
+          <h2 className="text-lg font-bold text-white tracking-wide">CASE HISTORY</h2>
+        </div>
+        <div className="flex gap-2 mb-8 border-b border-[#2D3139] pb-4">
+          {(['ALL', 'BOOKED', 'FOLLOW-UP'] as const).map(tab => (
+            <button key={tab} onClick={() => setCaseTab(tab)} className={`px-4 py-2 text-xs font-semibold rounded-md transition-all ${caseTab === tab ? 'bg-[#00FFA3] text-black' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+              {tab} ({filteredCases.length})
+            </button>
+          ))}
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#2D3139]">
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase">Date</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase">Client</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase">Status</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold text-gray-400 uppercase">Priority</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCases.length === 0 ? (
+                <tr><td colSpan={4} className="py-8 px-4 text-center text-gray-500 text-xs">No cases found</td></tr>
+              ) : (
+                filteredCases.map(caseRecord => (
+                  <tr key={caseRecord.id} className="border-b border-[#2D3139]/50 hover:bg-white/5 transition-colors">
+                    <td className="py-3 px-4 text-gray-300">{new Date(caseRecord.date).toLocaleDateString()}</td>
+                    <td className="py-3 px-4 text-gray-300">{caseRecord.clientName}</td>
+                    <td className="py-3 px-4"><span className="px-3 py-1 bg-[#00FFA3]/10 border border-[#00FFA3]/30 text-[#00FFA3] text-xs font-semibold rounded-full">{caseRecord.bookingStatus}</span></td>
+                    <td className="py-3 px-4"><span className={`px-3 py-1 rounded-full text-xs font-semibold ${caseRecord.priority === 'HIGH' ? 'bg-red-500/10 border border-red-500/30 text-red-300' : caseRecord.priority === 'MEDIUM' ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-300' : 'bg-green-500/10 border border-green-500/30 text-green-300'}`}>{caseRecord.priority}</span></td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const CompliancePage = () => (
+    <div className="col-span-1 lg:col-span-12 bg-[#1E2128] border border-[#2D3139] rounded-2xl p-8 shadow-xl overflow-y-auto">
+      <div className="flex items-center gap-3 mb-8 border-b border-[#2D3139] pb-4">
+        <h2 className="text-lg font-bold text-white tracking-wide">COMPLIANCE & AUDIT</h2>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <h3 className="text-sm font-bold text-[#00FFA3] uppercase">Compliance Settings</h3>
+          <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-4">
+            <input type="checkbox" checked={complianceSettings.hipaaMode} onChange={e => setComplianceSettings({...complianceSettings, hipaaMode: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+            <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">HIPAA Mode</label>
+          </div>
+          <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-4">
+            <input type="checkbox" checked={complianceSettings.phiRedaction} onChange={e => setComplianceSettings({...complianceSettings, phiRedaction: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+            <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">PHI Redaction {complianceSettings.phiRedaction && <span className="text-[#00FFA3]">Active</span>}</label>
+          </div>
+          <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-4">
+            <input type="checkbox" checked={complianceSettings.legalDisclaimer} onChange={e => setComplianceSettings({...complianceSettings, legalDisclaimer: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+            <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Legal Disclaimer {complianceSettings.legalDisclaimer && <span className="text-[#00FFA3]">Active</span>}</label>
+          </div>
+          <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-4">
+            <input type="checkbox" checked={complianceSettings.auditLogging} onChange={e => setComplianceSettings({...complianceSettings, auditLogging: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+            <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Audit Logging {complianceSettings.auditLogging && <span className="text-[#00FFA3]">Active</span>}</label>
+          </div>
+        </div>
+        <div className="space-y-6">
+          <h3 className="text-sm font-bold text-[#00FFA3] uppercase">Two-Party Consent States</h3>
+          <div className="bg-[#16181D] border border-[#2D3139] rounded-lg p-4 max-h-48 overflow-y-auto">
+            <div className="flex flex-wrap gap-2">
+              {['CA', 'CT', 'FL', 'IL', 'MD', 'MA', 'MT', 'NH', 'PA', 'WA'].map(state => (
+                <button key={state} onClick={() => setComplianceSettings({...complianceSettings, twoPartyConsentStates: complianceSettings.twoPartyConsentStates.includes(state) ? complianceSettings.twoPartyConsentStates.filter(s => s !== state) : [...complianceSettings.twoPartyConsentStates, state]})} className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${complianceSettings.twoPartyConsentStates.includes(state) ? 'bg-[#00FFA3] text-black' : 'bg-white/5 border border-[#2D3139] text-gray-400'}`}>
+                  {state}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="mt-8 pt-6 border-t border-[#2D3139]">
+        <h3 className="text-sm font-bold text-[#00FFA3] uppercase mb-4">Recent Activity</h3>
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {auditLog.length === 0 ? (
+            <p className="text-xs text-gray-500">No audit events logged</p>
+          ) : (
+            auditLog.slice(-6).reverse().map(entry => (
+              <div key={entry.id} className="text-xs text-gray-400 py-2 px-3 bg-[#16181D] rounded-lg border border-[#2D3139]/50 flex justify-between">
+                <span>{entry.action}</span>
+                <span className="text-gray-600">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const SettingsPanel = () => {
+    const [settingsTab, setSettingsTab] = useState<'AI'|'BRANDING'|'BEHAVIOR'|'CALLS'>('AI');
+
+    return (
       <div className="col-span-1 lg:col-span-9 bg-[#1E2128] border border-[#2D3139] rounded-2xl p-8 shadow-xl overflow-y-auto">
           <div className="flex items-center gap-3 mb-8 border-b border-[#2D3139] pb-4">
               <div className="bg-[#00FFA3]/10 p-2 rounded-lg">
@@ -659,125 +927,181 @@ const App: React.FC = () => {
               <h2 className="text-lg font-bold text-white tracking-wide">RECEPTIONIST CONFIGURATION</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Identity Section */}
+          {/* Settings Tabs */}
+          <div className="flex gap-2 mb-8 border-b border-[#2D3139] pb-4 overflow-x-auto">
+            {(['AI', 'BRANDING', 'BEHAVIOR', 'CALLS'] as const).map(tab => (
+              <button key={tab} onClick={() => setSettingsTab(tab)} className={`px-4 py-2 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${settingsTab === tab ? 'bg-[#00FFA3] text-black' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* AI Persona Tab */}
+          {settingsTab === 'AI' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                   <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">AI Persona</h3>
-                  
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Assistant Name</label>
-                      <input 
-                        type="text" 
-                        value={settings.aiName}
-                        onChange={e => setSettings({...settings, aiName: e.target.value})}
-                        className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors"
-                      />
+                      <input type="text" value={settings.aiName} onChange={e => setSettings({...settings, aiName: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors" />
                   </div>
-
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Voice & Tone</label>
-                      <div className="grid grid-cols-2 gap-3">
-                          <select 
-                             value={settings.tone}
-                             onChange={e => setSettings({...settings, tone: e.target.value})}
-                             className="bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none"
-                          >
-                              <option value="Professional and Empathetic">Professional & Empathetic</option>
-                              <option value="Strict and Formal">Strict & Formal</option>
-                              <option value="Casual and Friendly">Casual & Friendly</option>
-                              <option value="Urgent and Direct">Urgent & Direct</option>
-                          </select>
-                           <select 
-                             value={settings.voiceName}
-                             onChange={e => setSettings({...settings, voiceName: e.target.value})}
-                             className="bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none"
-                          >
-                             {Object.entries(availableVoices).map(([key, name]) => (
-                                <option key={key} value={key}>{name}</option>
-                             ))}
-                          </select>
-                      </div>
+                      <select value={settings.tone} onChange={e => setSettings({...settings, tone: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                          <option value="Professional and Empathetic">Professional & Empathetic</option>
+                          <option value="Strict and Formal">Strict & Formal</option>
+                          <option value="Casual and Friendly">Casual & Friendly</option>
+                          <option value="Urgent and Direct">Urgent & Direct</option>
+                      </select>
                   </div>
-                  
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Speech Pace & Style</label>
-                       <select 
-                            value={settings.languageStyle}
-                            onChange={e => setSettings({...settings, languageStyle: e.target.value})}
-                            className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none"
-                        >
-                            <option value="calm, clear, and natural human voice">Calm & Natural</option>
-                            <option value="slow and deliberate pace">Slow & Deliberate</option>
-                            <option value="fast and efficient pace">Fast & Efficient</option>
-                        </select>
+                      <select value={settings.languageStyle} onChange={e => setSettings({...settings, languageStyle: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                          <option value="calm, clear, and natural human voice">Calm & Natural</option>
+                          <option value="slow and deliberate pace">Slow & Deliberate</option>
+                          <option value="fast and efficient pace">Fast & Efficient</option>
+                      </select>
                   </div>
-
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Thinking Delay (Response Time)</label>
                       <div className="flex items-center gap-4 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
-                           <input 
-                             type="range" 
-                             min="0" 
-                             max="2000" 
-                             step="100" 
-                             value={settings.responseDelay} 
-                             onChange={e => setSettings({...settings, responseDelay: parseInt(e.target.value)})}
-                             className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#00FFA3]"
-                           />
+                           <input type="range" min="0" max="2000" step="100" value={settings.responseDelay} onChange={e => setSettings({...settings, responseDelay: parseInt(e.target.value)})} className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#00FFA3]" />
                            <span className="text-xs font-mono text-[#00FFA3] w-12 text-right">{(settings.responseDelay / 1000).toFixed(1)}s</span>
                       </div>
                   </div>
               </div>
 
-              {/* Script Section */}
               <div className="space-y-6">
                    <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">Script & Knowledge</h3>
-                   
                    <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Opening Greeting Script</label>
-                      <textarea 
-                        rows={3}
-                        value={settings.openingLine}
-                        onChange={e => setSettings({...settings, openingLine: e.target.value})}
-                        className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none"
-                      />
+                      <textarea rows={3} value={settings.openingLine} onChange={e => setSettings({...settings, openingLine: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none" />
                   </div>
-
                   <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Firm Knowledge Base (Bio & Services)</label>
-                      <textarea 
-                        rows={4}
-                        value={settings.firmBio}
-                        onChange={e => setSettings({...settings, firmBio: e.target.value})}
-                        placeholder="We specialize in..."
-                        className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none"
-                      />
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Firm Knowledge Base</label>
+                      <textarea rows={3} value={settings.firmBio} onChange={e => setSettings({...settings, firmBio: e.target.value})} placeholder="We specialize in..." className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none" />
                   </div>
-
                   <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Urgency Triggers (Keywords)</label>
-                      <textarea 
-                        rows={2}
-                        value={settings.urgencyKeywords.join(', ')}
-                        onChange={e => setSettings({...settings, urgencyKeywords: e.target.value.split(',').map(s => s.trim())})}
-                        placeholder="court date, deadline, police..."
-                        className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none"
-                      />
-                      <p className="text-[10px] text-gray-500 mt-1">Separate keywords with commas. These trigger the 'High Urgency' flag.</p>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Urgency Triggers</label>
+                      <textarea rows={2} value={settings.urgencyKeywords.join(', ')} onChange={e => setSettings({...settings, urgencyKeywords: e.target.value.split(',').map(s => s.trim())})} placeholder="court date, deadline..." className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none" />
+                      <p className="text-[10px] text-gray-500 mt-1">Separate with commas</p>
                   </div>
               </div>
-          </div>
-          
+            </div>
+          )}
+
+          {/* Branding Tab */}
+          {settingsTab === 'BRANDING' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                  <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">Branding</h3>
+                  <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Firm Name</label>
+                      <input type="text" value={settings.firmName} onChange={e => setSettings({...settings, firmName: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
+                  </div>
+                  <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Logo URL</label>
+                      <input type="text" value={settings.logoUrl || ''} onChange={e => setSettings({...settings, logoUrl: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
+                  </div>
+                  <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Primary Practice Area</label>
+                      <input type="text" value={settings.practiceArea || ''} onChange={e => setSettings({...settings, practiceArea: e.target.value})} placeholder="General Practice" className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
+                  </div>
+                  <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Firm Tagline</label>
+                      <input type="text" value={settings.firmTagline || ''} onChange={e => setSettings({...settings, firmTagline: e.target.value})} placeholder="Your trusted partner" className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
+                  </div>
+              </div>
+              <div />
+            </div>
+          )}
+
+          {/* AI Behavior Tab */}
+          {settingsTab === 'BEHAVIOR' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                  <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">AI Behavior</h3>
+                  <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
+                    <input type="checkbox" checked={settings.demoMode || false} onChange={e => setSettings({...settings, demoMode: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Demo Mode</label>
+                  </div>
+                  <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Conversation Tone</label>
+                      <select value={settings.conversationTone || 'Professional'} onChange={e => setSettings({...settings, conversationTone: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                          <option value="Formal">Formal</option>
+                          <option value="Professional">Professional</option>
+                          <option value="Casual">Casual</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Response Length</label>
+                      <select value={settings.responseLength || 'Balanced'} onChange={e => setSettings({...settings, responseLength: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                          <option value="Concise">Concise</option>
+                          <option value="Balanced">Balanced</option>
+                          <option value="Detailed">Detailed</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Empathy Level</label>
+                      <select value={settings.empathyLevel || 'Medium'} onChange={e => setSettings({...settings, empathyLevel: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                      </select>
+                  </div>
+              </div>
+              <div />
+            </div>
+          )}
+
+          {/* Call Handling Tab */}
+          {settingsTab === 'CALLS' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                  <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">Call Handling</h3>
+                  <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
+                    <input type="checkbox" checked={settings.callRecording || false} onChange={e => setSettings({...settings, callRecording: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Call Recording</label>
+                  </div>
+                  <div>
+                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Waveform Style</label>
+                      <select value={settings.waveformStyle || 'Standard'} onChange={e => setSettings({...settings, waveformStyle: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                          <option value="Minimal">Minimal</option>
+                          <option value="Standard">Standard</option>
+                          <option value="Detailed">Detailed</option>
+                      </select>
+                  </div>
+                  <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
+                    <input type="checkbox" checked={settings.afterHoursMode || false} onChange={e => setSettings({...settings, afterHoursMode: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">After-Hours Mode</label>
+                  </div>
+              </div>
+              <div className="space-y-6">
+                  <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">Advanced</h3>
+                  <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
+                    <input type="checkbox" checked={settings.warmTransfer || false} onChange={e => setSettings({...settings, warmTransfer: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Warm Transfer</label>
+                  </div>
+                  <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
+                    <input type="checkbox" checked={settings.voiceMailTranscription || false} onChange={e => setSettings({...settings, voiceMailTranscription: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Voicemail Transcription</label>
+                  </div>
+                  <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
+                    <input type="checkbox" checked={settings.callbackQueue || false} onChange={e => setSettings({...settings, callbackQueue: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Callback Queue</label>
+                  </div>
+              </div>
+            </div>
+          )}
+
           <div className="mt-8 pt-6 border-t border-[#2D3139] flex justify-end">
-               <button 
-                  onClick={() => setActiveTab('LIVE_INTAKE')} 
-                  className="bg-[#00FFA3] hover:bg-[#00D88A] text-black font-bold py-2 px-6 rounded-lg transition-colors text-sm"
-                >
+               <button onClick={() => setActiveTab('LIVE_INTAKE')} className="bg-[#00FFA3] hover:bg-[#00D88A] text-black font-bold py-2 px-6 rounded-lg transition-colors text-sm">
                    Save & Return to Dashboard
                </button>
           </div>
       </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -804,14 +1128,14 @@ const App: React.FC = () => {
              </div>
         </div>
         
-        <nav className="hidden lg:flex items-center gap-1 bg-[#1A1C20] p-1 rounded-lg border border-[#2D3139]">
-            {['LIVE_INTAKE', 'SETTINGS'].map((tab) => (
-                <button 
-                    key={tab} 
+        <nav className="hidden lg:flex items-center gap-1 bg-[#1A1C20] p-1 rounded-lg border border-[#2D3139] overflow-x-auto">
+            {['LIVE_INTAKE', 'ANALYTICS', 'CASE HISTORY', 'COMPLIANCE', 'SETTINGS'].map((tab) => (
+                <button
+                    key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2 text-xs font-semibold rounded-md transition-all ${activeTab === tab ? 'bg-[#00FFA3] text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                    className={`px-4 py-2 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === tab ? 'bg-[#00FFA3] text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                 >
-                    {tab.replace('_', ' ')}
+                    {tab}
                 </button>
             ))}
         </nav>
@@ -819,11 +1143,16 @@ const App: React.FC = () => {
 
       {/* Main Grid */}
       <main className="flex-1 p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:overflow-hidden lg:max-h-[calc(100vh-80px)] h-auto pb-24 lg:pb-8">
-        
-        {activeTab === 'SETTINGS' ? (
+
+        {activeTab === 'ANALYTICS' ? (
+            <AnalyticsDashboard />
+        ) : activeTab === 'CASE HISTORY' ? (
+            <CaseHistoryPage />
+        ) : activeTab === 'COMPLIANCE' ? (
+            <CompliancePage />
+        ) : activeTab === 'SETTINGS' ? (
              <>
                 <div className="hidden lg:block lg:col-span-3">
-                   {/* Placeholder for Left Nav if needed in settings, currently just keeping layout grid */}
                    <div className="bg-[#1E2128] border border-[#2D3139] rounded-2xl p-6 h-full opacity-50 flex items-center justify-center">
                        <p className="text-xs text-gray-500 font-medium uppercase tracking-widest text-center">Settings Mode Active</p>
                    </div>
