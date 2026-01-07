@@ -268,6 +268,10 @@ const App: React.FC = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const mixedAudioDestinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
 
+  // Settings Panel Scroll Preservation
+  const settingsPanelRef = useRef<HTMLDivElement>(null);
+  const settingsPanelScrollRef = useRef(0);
+
   // Persistence Effects
   useEffect(() => {
     if (lawyerReport) {
@@ -320,6 +324,28 @@ const App: React.FC = () => {
         transcriptionContainerRef.current.scrollTop = transcriptionContainerRef.current.scrollHeight;
     }
   }, [transcriptionHistory, currentInputTranscription, currentOutputTranscription]);
+
+  // Preserve settings panel scroll position during editing
+  useEffect(() => {
+    if (activeTab === 'SETTINGS' && settingsPanelRef.current) {
+      const panel = settingsPanelRef.current;
+      const handleScroll = () => {
+        settingsPanelScrollRef.current = panel.scrollTop;
+      };
+      panel.addEventListener('scroll', handleScroll);
+      return () => panel.removeEventListener('scroll', handleScroll);
+    }
+  }, [activeTab]);
+
+  // Restore scroll position after settings change
+  useEffect(() => {
+    if (activeTab === 'SETTINGS' && settingsPanelRef.current) {
+      const panel = settingsPanelRef.current;
+      requestAnimationFrame(() => {
+        panel.scrollTop = settingsPanelScrollRef.current;
+      });
+    }
+  }, [settings, activeTab]);
 
   const stateRef = useRef({
       callState,
@@ -915,11 +941,16 @@ const App: React.FC = () => {
     </div>
   );
 
+  // Memoized settings handlers to prevent unnecessary re-renders
+  const handleSettingsChange = useCallback((updates: Partial<ReceptionistSettings>) => {
+    setSettings(prev => ({...prev, ...updates}));
+  }, []);
+
   const SettingsPanel = () => {
     const [settingsTab, setSettingsTab] = useState<'AI'|'BRANDING'|'BEHAVIOR'|'CALLS'>('AI');
 
     return (
-      <div className="col-span-1 lg:col-span-9 bg-[#1E2128] border border-[#2D3139] rounded-2xl p-8 shadow-xl overflow-y-auto">
+      <div ref={settingsPanelRef} className="col-span-1 lg:col-span-9 bg-[#1E2128] border border-[#2D3139] rounded-2xl p-8 shadow-xl overflow-y-auto">
           <div className="flex items-center gap-3 mb-8 border-b border-[#2D3139] pb-4">
               <div className="bg-[#00FFA3]/10 p-2 rounded-lg">
                 <SettingsIcon />
@@ -943,11 +974,11 @@ const App: React.FC = () => {
                   <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">AI Persona</h3>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Assistant Name</label>
-                      <input type="text" value={settings.aiName} onChange={e => setSettings({...settings, aiName: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors" />
+                      <input type="text" value={settings.aiName} onChange={e => handleSettingsChange({aiName: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors" />
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Voice & Tone</label>
-                      <select value={settings.tone} onChange={e => setSettings({...settings, tone: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                      <select value={settings.tone} onChange={e => handleSettingsChange({tone: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
                           <option value="Professional and Empathetic">Professional & Empathetic</option>
                           <option value="Strict and Formal">Strict & Formal</option>
                           <option value="Casual and Friendly">Casual & Friendly</option>
@@ -956,7 +987,7 @@ const App: React.FC = () => {
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Speech Pace & Style</label>
-                      <select value={settings.languageStyle} onChange={e => setSettings({...settings, languageStyle: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                      <select value={settings.languageStyle} onChange={e => handleSettingsChange({languageStyle: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
                           <option value="calm, clear, and natural human voice">Calm & Natural</option>
                           <option value="slow and deliberate pace">Slow & Deliberate</option>
                           <option value="fast and efficient pace">Fast & Efficient</option>
@@ -965,7 +996,7 @@ const App: React.FC = () => {
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Thinking Delay (Response Time)</label>
                       <div className="flex items-center gap-4 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
-                           <input type="range" min="0" max="2000" step="100" value={settings.responseDelay} onChange={e => setSettings({...settings, responseDelay: parseInt(e.target.value)})} className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#00FFA3]" />
+                           <input type="range" min="0" max="2000" step="100" value={settings.responseDelay} onChange={e => handleSettingsChange({responseDelay: parseInt(e.target.value)})} className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#00FFA3]" />
                            <span className="text-xs font-mono text-[#00FFA3] w-12 text-right">{(settings.responseDelay / 1000).toFixed(1)}s</span>
                       </div>
                   </div>
@@ -975,15 +1006,15 @@ const App: React.FC = () => {
                    <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">Script & Knowledge</h3>
                    <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Opening Greeting Script</label>
-                      <textarea rows={3} value={settings.openingLine} onChange={e => setSettings({...settings, openingLine: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none" />
+                      <textarea rows={3} value={settings.openingLine} onChange={e => handleSettingsChange({openingLine: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none" />
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Firm Knowledge Base</label>
-                      <textarea rows={3} value={settings.firmBio} onChange={e => setSettings({...settings, firmBio: e.target.value})} placeholder="We specialize in..." className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none" />
+                      <textarea rows={3} value={settings.firmBio} onChange={e => handleSettingsChange({firmBio: e.target.value})} placeholder="We specialize in..." className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none" />
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Urgency Triggers</label>
-                      <textarea rows={2} value={settings.urgencyKeywords.join(', ')} onChange={e => setSettings({...settings, urgencyKeywords: e.target.value.split(',').map(s => s.trim())})} placeholder="court date, deadline..." className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none" />
+                      <textarea rows={2} value={settings.urgencyKeywords.join(', ')} onChange={e => handleSettingsChange({urgencyKeywords: e.target.value.split(',').map(s => s.trim())})} placeholder="court date, deadline..." className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none" />
                       <p className="text-[10px] text-gray-500 mt-1">Separate with commas</p>
                   </div>
               </div>
@@ -997,19 +1028,19 @@ const App: React.FC = () => {
                   <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">Branding</h3>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Firm Name</label>
-                      <input type="text" value={settings.firmName} onChange={e => setSettings({...settings, firmName: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
+                      <input type="text" value={settings.firmName} onChange={e => handleSettingsChange({firmName: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Logo URL</label>
-                      <input type="text" value={settings.logoUrl || ''} onChange={e => setSettings({...settings, logoUrl: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
+                      <input type="text" value={settings.logoUrl || ''} onChange={e => handleSettingsChange({logoUrl: e.target.value})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Primary Practice Area</label>
-                      <input type="text" value={settings.practiceArea || ''} onChange={e => setSettings({...settings, practiceArea: e.target.value})} placeholder="General Practice" className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
+                      <input type="text" value={settings.practiceArea || ''} onChange={e => handleSettingsChange({practiceArea: e.target.value})} placeholder="General Practice" className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Firm Tagline</label>
-                      <input type="text" value={settings.firmTagline || ''} onChange={e => setSettings({...settings, firmTagline: e.target.value})} placeholder="Your trusted partner" className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
+                      <input type="text" value={settings.firmTagline || ''} onChange={e => handleSettingsChange({firmTagline: e.target.value})} placeholder="Your trusted partner" className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none" />
                   </div>
               </div>
               <div />
@@ -1022,12 +1053,12 @@ const App: React.FC = () => {
               <div className="space-y-6">
                   <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">AI Behavior</h3>
                   <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
-                    <input type="checkbox" checked={settings.demoMode || false} onChange={e => setSettings({...settings, demoMode: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <input type="checkbox" checked={settings.demoMode || false} onChange={e => handleSettingsChange({demoMode: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
                     <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Demo Mode</label>
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Conversation Tone</label>
-                      <select value={settings.conversationTone || 'Professional'} onChange={e => setSettings({...settings, conversationTone: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                      <select value={settings.conversationTone || 'Professional'} onChange={e => handleSettingsChange({conversationTone: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
                           <option value="Formal">Formal</option>
                           <option value="Professional">Professional</option>
                           <option value="Casual">Casual</option>
@@ -1035,7 +1066,7 @@ const App: React.FC = () => {
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Response Length</label>
-                      <select value={settings.responseLength || 'Balanced'} onChange={e => setSettings({...settings, responseLength: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                      <select value={settings.responseLength || 'Balanced'} onChange={e => handleSettingsChange({responseLength: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
                           <option value="Concise">Concise</option>
                           <option value="Balanced">Balanced</option>
                           <option value="Detailed">Detailed</option>
@@ -1043,7 +1074,7 @@ const App: React.FC = () => {
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Empathy Level</label>
-                      <select value={settings.empathyLevel || 'Medium'} onChange={e => setSettings({...settings, empathyLevel: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                      <select value={settings.empathyLevel || 'Medium'} onChange={e => handleSettingsChange({empathyLevel: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
                           <option value="Low">Low</option>
                           <option value="Medium">Medium</option>
                           <option value="High">High</option>
@@ -1060,34 +1091,34 @@ const App: React.FC = () => {
               <div className="space-y-6">
                   <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">Call Handling</h3>
                   <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
-                    <input type="checkbox" checked={settings.callRecording || false} onChange={e => setSettings({...settings, callRecording: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <input type="checkbox" checked={settings.callRecording || false} onChange={e => handleSettingsChange({callRecording: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
                     <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Call Recording</label>
                   </div>
                   <div>
                       <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Waveform Style</label>
-                      <select value={settings.waveformStyle || 'Standard'} onChange={e => setSettings({...settings, waveformStyle: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
+                      <select value={settings.waveformStyle || 'Standard'} onChange={e => handleSettingsChange({waveformStyle: e.target.value as any})} className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none">
                           <option value="Minimal">Minimal</option>
                           <option value="Standard">Standard</option>
                           <option value="Detailed">Detailed</option>
                       </select>
                   </div>
                   <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
-                    <input type="checkbox" checked={settings.afterHoursMode || false} onChange={e => setSettings({...settings, afterHoursMode: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <input type="checkbox" checked={settings.afterHoursMode || false} onChange={e => handleSettingsChange({afterHoursMode: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
                     <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">After-Hours Mode</label>
                   </div>
               </div>
               <div className="space-y-6">
                   <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">Advanced</h3>
                   <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
-                    <input type="checkbox" checked={settings.warmTransfer || false} onChange={e => setSettings({...settings, warmTransfer: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <input type="checkbox" checked={settings.warmTransfer || false} onChange={e => handleSettingsChange({warmTransfer: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
                     <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Warm Transfer</label>
                   </div>
                   <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
-                    <input type="checkbox" checked={settings.voiceMailTranscription || false} onChange={e => setSettings({...settings, voiceMailTranscription: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <input type="checkbox" checked={settings.voiceMailTranscription || false} onChange={e => handleSettingsChange({voiceMailTranscription: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
                     <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Voicemail Transcription</label>
                   </div>
                   <div className="flex items-center gap-3 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
-                    <input type="checkbox" checked={settings.callbackQueue || false} onChange={e => setSettings({...settings, callbackQueue: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
+                    <input type="checkbox" checked={settings.callbackQueue || false} onChange={e => handleSettingsChange({callbackQueue: e.target.checked})} className="w-4 h-4 rounded cursor-pointer" />
                     <label className="text-xs font-medium text-gray-400 uppercase cursor-pointer flex-1">Callback Queue</label>
                   </div>
               </div>
