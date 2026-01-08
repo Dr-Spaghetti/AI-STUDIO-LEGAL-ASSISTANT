@@ -3,3 +3,7 @@ export { Input } from './Input';
 export { Toast, ToastContainer } from './Toast';
 export { Modal } from './Modal';
 export { Dropdown } from './Dropdown';
+export { Card } from './Card';
+export { Badge } from './Badge';
+export { Tabs } from './Tabs';
+export { ValidatedFormField } from './ValidatedFormField';
