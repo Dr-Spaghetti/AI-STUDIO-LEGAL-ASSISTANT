@@ -14,6 +14,7 @@ export const ErrorMessages = {
     OFFLINE: "❌ Network Error: No internet connection detected",
     TIMEOUT: "❌ Connection Timeout: Request took too long to complete",
     CORS_ERROR: "❌ CORS Error: Server rejected the request",
+    GENERIC: "❌ Network Error: Unable to communicate with server",
   },
   MICROPHONE: {
     PERMISSION_DENIED: "❌ Microphone Permission Denied: Please allow microphone access in browser settings",
@@ -34,10 +35,18 @@ export const ErrorMessages = {
 
 export const getErrorMessage = (errorCode: string, defaultMessage?: string): string => {
   // Check if error code matches a known pattern
-  for (const category of Object.values(ErrorMessages) as Record<string, string>[]) {
-    for (const [key, message] of Object.entries(category)) {
-      if (errorCode.toUpperCase().includes(key)) {
-        return message;
+  const errorKey = errorCode.toUpperCase();
+
+  // Iterate through categories (skip GENERIC which is a string)
+  const categories = Object.entries(ErrorMessages).filter(([key]) => key !== 'GENERIC');
+
+  for (const [, category] of categories) {
+    // Only process if it's an object (not a string like GENERIC)
+    if (typeof category === 'object' && category !== null) {
+      for (const [key, message] of Object.entries(category)) {
+        if (errorKey.includes(key)) {
+          return message as string;
+        }
       }
     }
   }

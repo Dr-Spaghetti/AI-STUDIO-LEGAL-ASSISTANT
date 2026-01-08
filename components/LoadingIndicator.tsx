@@ -31,9 +31,9 @@ export const FullPageLoader: React.FC<FullPageLoaderProps> = ({
   message = 'Initializing AI Receptionist...',
 }) => {
   return (
-    <div className="absolute inset-0 bg-[#050505]/80 backdrop-blur-sm flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-[#050505]/80 backdrop-blur-sm flex items-center justify-center z-50" role="status" aria-live="assertive" aria-label="Loading">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-16 h-16 border-3 border-[#00FFA3]/30 border-t-[#00FFA3] rounded-full animate-spin shadow-[0_0_30px_rgba(0,255,163,0.3)]" />
+        <div className="w-16 h-16 border-4 border-[#00FFA3]/30 border-t-[#00FFA3] rounded-full animate-spin shadow-[0_0_30px_rgba(0,255,163,0.3)]" />
         <p className="text-white font-medium text-center">{message}</p>
       </div>
     </div>

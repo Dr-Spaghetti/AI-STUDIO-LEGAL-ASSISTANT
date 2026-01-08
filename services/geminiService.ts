@@ -179,10 +179,11 @@ export const sendFollowUpEmailDeclaration: FunctionDeclaration = {
 };
 
 export async function generateLawyerReport(clientInfo: Partial<ClientInfo>, transcript: string, isUrgent: boolean, urgencyReason: string): Promise<LawyerReport> {
-    if (!process.env.API_KEY) {
-        throw new Error("API key not found");
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+        throw new Error("API key not found in environment variables");
     }
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
     const secureUploadLink = `https://tedlaw.secure-uploads.com/${Date.now()}-${Math.random().toString(36).substring(2)}`;
 
     const prompt = `You are a legal analyst AI. Based on the provided new client intake information and the full conversation transcript, generate a confidential internal report for the lead attorney. Fill out all the fields in the requested JSON schema.
@@ -255,10 +256,11 @@ ${isUrgent ? `\nCRITICAL ALERT: This case was flagged as URGENT during the call 
 }
 
 export async function generateFollowUpActions(lawyerReport: LawyerReport): Promise<GenerateContentResponse> {
-    if (!process.env.API_KEY) {
-        throw new Error("API key not found");
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+        throw new Error("API key not found in environment variables");
     }
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey });
 
     const prompt = `You are an expert paralegal. Based on the following internal lawyer report JSON object, suggest 3-5 concrete, actionable follow-up steps for the legal team. Frame these as a checklist in markdown. Make them concise and clear.
 

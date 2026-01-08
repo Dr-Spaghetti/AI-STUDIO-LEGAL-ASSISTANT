@@ -303,6 +303,7 @@ const App: React.FC = () => {
     // Validate client data before export
     if (!lawyerReport?.clientDetails) {
       setErrorMessage('Cannot export: Missing client details');
+      setShowCrmModal(false);
       logger.error('CRM export attempted with missing client details', undefined, 'crm');
       return;
     }
@@ -310,17 +311,26 @@ const App: React.FC = () => {
     const { name, email, phone } = lawyerReport.clientDetails;
 
     // Validate required fields
+    if (!name || name.trim().length === 0) {
+      setErrorMessage('Cannot export: Client name is required');
+      setShowCrmModal(false);
+      logger.warn('CRM export validation failed for name', 'Missing name', 'crm');
+      return;
+    }
+
     const emailValidation = validateEmailForm(email || '');
     const phoneValidation = validatePhoneForm(phone || '');
 
     if (!emailValidation.isValid) {
       setErrorMessage(`Cannot export: ${emailValidation.error}`);
+      setShowCrmModal(false);
       logger.warn('CRM export validation failed for email', emailValidation.error, 'crm');
       return;
     }
 
     if (!phoneValidation.isValid) {
       setErrorMessage(`Cannot export: ${phoneValidation.error}`);
+      setShowCrmModal(false);
       logger.warn('CRM export validation failed for phone', phoneValidation.error, 'crm');
       return;
     }
