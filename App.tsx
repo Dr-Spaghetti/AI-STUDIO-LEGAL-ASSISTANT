@@ -10,6 +10,7 @@ import LiveIntakePanel from './components/LiveIntakePanel';
 import AnalyticsPanel from './components/AnalyticsPanel';
 import CaseHistoryPanel from './components/CaseHistoryPanel';
 import StatusBar from './components/StatusBar';
+import { FullPageLoader } from './components/LoadingIndicator';
 
 import {
   CallState,
@@ -179,8 +180,9 @@ const App: React.FC = () => {
   }, []);
 
   const startCall = useCallback(async () => {
-    if (!process.env.API_KEY) {
-      setErrorMessage("API Key Configuration Error");
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+      setErrorMessage("API Key Configuration Error: Please set VITE_API_KEY in your Vercel environment variables.");
       setCallState(CallState.ERROR);
       return;
     }
@@ -190,7 +192,7 @@ const App: React.FC = () => {
         setCallState(CallState.ERROR);
         return;
     }
-    
+
     setCallState(CallState.CONNECTING);
     setErrorMessage(null);
     setClientInfo({});
@@ -202,7 +204,7 @@ const App: React.FC = () => {
     audioChunksRef.current = [];
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       inputAudioContextRef.current = inputAudioContext;
       const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
@@ -405,6 +407,13 @@ const App: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full bg-[#050505] text-white overflow-hidden">
+        {/* Loading Overlay */}
+        {(callState === CallState.CONNECTING || callState === CallState.PROCESSING) && (
+          <FullPageLoader
+            message={callState === CallState.CONNECTING ? 'Connecting to Gemini Live API...' : 'Generating Report...'}
+          />
+        )}
+
         {/* Sidebar */}
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
         
