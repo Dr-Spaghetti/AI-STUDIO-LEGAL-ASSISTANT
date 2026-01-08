@@ -42,6 +42,7 @@ import {
 import { marked } from 'marked';
 import { logger } from './utils/logger';
 import { validateEmail, validatePhone, validateName } from './utils/validators';
+import { validateEmail as validateEmailForm, validatePhone as validatePhoneForm } from './utils/formValidation';
 import {
   AppError,
   MicrophonePermissionError,
@@ -299,16 +300,45 @@ const App: React.FC = () => {
 
   const confirmCrmExport = useCallback(() => {
     if (!pendingCrm) return;
-    
+
+    // Validate client data before export
+    if (!lawyerReport?.clientDetails) {
+      setErrorMessage('Cannot export: Missing client details');
+      logger.error('CRM export attempted with missing client details', undefined, 'crm');
+      return;
+    }
+
+    const { name, email, phone } = lawyerReport.clientDetails;
+
+    // Validate required fields
+    const emailValidation = validateEmailForm(email || '');
+    const phoneValidation = validatePhoneForm(phone || '');
+
+    if (!emailValidation.isValid) {
+      setErrorMessage(`Cannot export: ${emailValidation.error}`);
+      logger.warn('CRM export validation failed for email', emailValidation.error, 'crm');
+      return;
+    }
+
+    if (!phoneValidation.isValid) {
+      setErrorMessage(`Cannot export: ${phoneValidation.error}`);
+      logger.warn('CRM export validation failed for phone', phoneValidation.error, 'crm');
+      return;
+    }
+
     const crmName = pendingCrm;
     setShowCrmModal(false);
     setCrmExportStatus(prev => ({ ...prev, [crmName]: CRMExportStatus.EXPORTING }));
-    
+
+    logger.info(`Starting CRM export to ${crmName}`, { clientName: name }, 'crm');
+
     // Simulate API call
     setTimeout(() => {
       setCrmExportStatus(prev => ({ ...prev, [crmName]: CRMExportStatus.SUCCESS }));
+      setErrorMessage(null);
+      logger.info(`Successfully exported to ${crmName}`, undefined, 'crm');
     }, 1500);
-  }, [pendingCrm]);
+  }, [pendingCrm, lawyerReport]);
 
   const clearCrmLogs = useCallback(() => {
       setCrmExportStatus({
