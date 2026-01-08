@@ -7,3 +7,4 @@ export { Card } from './Card';
 export { Badge } from './Badge';
 export { Tabs } from './Tabs';
 export { ValidatedFormField } from './ValidatedFormField';
+export { FileUploadField } from './FileUploadField';
