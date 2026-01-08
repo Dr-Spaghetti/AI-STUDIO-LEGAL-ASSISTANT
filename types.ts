@@ -38,29 +38,13 @@ export interface BrandingConfig {
 export interface ReceptionistSettings {
   aiName: string;
   firmName: string;
-  tone: string;
-  languageStyle: string;
-  responseDelay: number;
+  tone: string; // e.g., 'Professional & Empathetic', 'Direct & Formal'
+  languageStyle: string; // e.g., 'Calm', 'Fast-paced'
+  responseDelay: number; // in milliseconds
   openingLine: string;
   urgencyKeywords: string[];
   voiceName: string;
   firmBio: string;
-  // Branding Section
-  logoUrl?: string;
-  practiceArea?: string;
-  firmTagline?: string;
-  // AI Behavior Section
-  demoMode?: boolean;
-  conversationTone?: 'Formal' | 'Professional' | 'Casual';
-  responseLength?: 'Concise' | 'Balanced' | 'Detailed';
-  empathyLevel?: 'Low' | 'Medium' | 'High';
-  // Call Handling Section
-  callRecording?: boolean;
-  waveformStyle?: 'Minimal' | 'Standard' | 'Detailed';
-  afterHoursMode?: boolean;
-  warmTransfer?: boolean;
-  voiceMailTranscription?: boolean;
-  callbackQueue?: boolean;
 }
 
 export interface ClientInfo {
@@ -94,53 +78,3 @@ export interface LawyerReport {
 }
 
 export type LiveSessionPromise = Promise<LiveSession>;
-
-// Analytics & Metrics
-export interface CallMetrics {
-  totalCalls: number;
-  appointmentsBooked: number;
-  conversionRate: number;
-  avgCallDuration: number; // in minutes
-  pipelineValue: number; // in dollars
-  retainedValue: number; // in dollars
-  lastUpdated: string;
-}
-
-// Case History & CRM
-export interface CaseRecord {
-  id: string;
-  clientName: string;
-  date: string;
-  bookingStatus: 'BOOKED' | 'PENDING' | 'FOLLOW-UP' | 'COMPLETED';
-  priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  caseDetails?: string;
-  appointmentDate?: string;
-}
-
-// Workflow Automation
-export interface WorkflowItem {
-  id: string;
-  type: 'conflict_check' | 'follow_up' | 'ai_analysis';
-  clientId: string;
-  clientName: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  createdAt: string;
-  dueDate?: string;
-}
-
-// Compliance & Audit
-export interface ComplianceSettings {
-  hipaaMode: boolean;
-  phiRedaction: boolean;
-  legalDisclaimer: boolean;
-  auditLogging: boolean;
-  twoPartyConsentStates: string[];
-}
-
-export interface AuditLogEntry {
-  id: string;
-  timestamp: string;
-  action: string;
-  user?: string;
-  details?: Record<string, unknown>;
-}

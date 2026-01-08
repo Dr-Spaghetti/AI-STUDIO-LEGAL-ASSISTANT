@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script type="importmap">
 {
   "imports": {
@@ -23,13 +23,18 @@
 <style>
   :root {
     --primary-accent: #00FFA3;
-    --bg-base: #0A0B0D;
+    --bg-base: #050505;
+    --bg-card: #0F1115;
     --bg-surface: #1E2128;
+    --border-color: #2D3139;
+    --glass-border: rgba(255, 255, 255, 0.08);
   }
+  
   body {
     background-color: var(--bg-base);
     font-family: 'Inter', sans-serif;
     color: white;
+    overflow: hidden; /* Prevent body scroll, handle inside dashboard */
   }
   
   /* Custom Scrollbar */
@@ -38,51 +43,57 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
   }
 
-  /* Pulse Animation */
-  @keyframes pulse-ring {
-    0% {
-      transform: scale(0.8);
-      opacity: 0.5;
-    }
-    100% {
-      transform: scale(2.5);
-      opacity: 0;
-    }
+  /* Neon Glow Utilities */
+  .neon-text {
+    text-shadow: 0 0 10px rgba(0, 255, 163, 0.5);
   }
   
-  .animate-pulse-ring {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 2px solid var(--primary-accent);
-    animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  .neon-border {
+    box-shadow: 0 0 15px rgba(0, 255, 163, 0.15), inset 0 0 15px rgba(0, 255, 163, 0.05);
   }
   
-  .animate-pulse-ring:nth-child(2) {
-    animation-delay: 0.5s;
+  .neon-glow-strong {
+    box-shadow: 0 0 30px rgba(0, 255, 163, 0.4);
+  }
+
+  /* Glassmorphism */
+  .glass-panel {
+    background: rgba(15, 17, 21, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Orb Animation */
+  @keyframes orb-pulse {
+    0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 30px rgba(0, 255, 163, 0.3); }
+    50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 50px rgba(0, 255, 163, 0.6); }
+    100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 30px rgba(0, 255, 163, 0.3); }
   }
   
-  .glow-effect {
-    box-shadow: 0 0 40px rgba(0, 255, 163, 0.2);
+  .animate-orb {
+    animation: orb-pulse 3s infinite ease-in-out;
+  }
+
+  @keyframes wave {
+    0%, 100% { height: 10%; }
+    50% { height: 100%; }
   }
   
-  .glow-effect-active {
-    box-shadow: 0 0 60px rgba(0, 255, 163, 0.4);
+  .wave-bar {
+    animation: wave 1s ease-in-out infinite;
   }
+
 </style>
 </head>
   <body>
