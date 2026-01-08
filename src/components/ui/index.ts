@@ -8,3 +8,5 @@ export { Badge } from './Badge';
 export { Tabs } from './Tabs';
 export { ValidatedFormField } from './ValidatedFormField';
 export { FileUploadField } from './FileUploadField';
+export { Alert, AlertContainer } from './Alert';
+export { Pagination } from './Pagination';
