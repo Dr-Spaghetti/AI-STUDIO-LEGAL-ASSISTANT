@@ -6,6 +6,7 @@ import {
   FunctionCall,
 } from '@google/genai';
 import CallControl from './components/CallControl';
+import { LoadingIndicator, FullPageLoader } from './components/LoadingIndicator';
 import {
   CallState,
   ClientInfo,
@@ -325,9 +326,11 @@ const App: React.FC = () => {
   };
 
   const startCall = useCallback(async () => {
-    if (!process.env.API_KEY) {
-      setErrorMessage("API Key Configuration Error: Please check your environment variables.");
+    const apiKey = import.meta.env.VITE_API_KEY;
+    if (!apiKey) {
+      setErrorMessage("API Key Configuration Error: Please set VITE_API_KEY in your Vercel environment variables.");
       setCallState(CallState.ERROR);
+      logger.error('API Key not found in environment variables', undefined, 'auth');
       return;
     }
 
@@ -358,7 +361,7 @@ const App: React.FC = () => {
     audioChunksRef.current = [];
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       inputAudioContextRef.current = inputAudioContext;
       const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
@@ -781,6 +784,13 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Loading Overlay */}
+      {(callState === CallState.CONNECTING || callState === CallState.PROCESSING) && (
+          <FullPageLoader
+            message={callState === CallState.CONNECTING ? 'Connecting to Gemini Live API...' : 'Generating Report...'}
+          />
+      )}
+
       {/* Error Banner */}
       {errorMessage && (
           <div className="bg-red-500/10 border-b border-red-500/20 px-8 py-3 flex items-center justify-between animate-fade-in-down sticky top-0 z-50 backdrop-blur-md">
