@@ -26,6 +26,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || isLoading}
+        aria-busy={isLoading}
+        aria-disabled={disabled || isLoading}
         className={`
           font-semibold rounded-lg transition-colors
           disabled:opacity-50 disabled:cursor-not-allowed

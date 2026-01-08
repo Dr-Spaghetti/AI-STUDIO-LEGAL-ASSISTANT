@@ -46,6 +46,7 @@ import {
 import { marked } from 'marked';
 import { logger } from './utils/logger';
 import { validateEmail, validatePhone, validateName } from './utils/validators';
+import { useToast } from './src/contexts/ToastContext';
 import {
   AppError,
   MicrophonePermissionError,
@@ -115,6 +116,7 @@ const DEFAULT_SETTINGS: ReceptionistSettings = {
 };
 
 const App: React.FC = () => {
+  const { success, error, warning, info } = useToast();
   const [activeTab, setActiveTab] = useState('LIVE_INTAKE');
   const [callState, setCallState] = useState<CallState>(CallState.IDLE);
   const [clientInfo, setClientInfo] = useState<Partial<ClientInfo>>({});
@@ -418,16 +420,18 @@ const App: React.FC = () => {
 
   const confirmCrmExport = useCallback(() => {
     if (!pendingCrm) return;
-    
+
     const crmName = pendingCrm;
     setShowCrmModal(false);
     setCrmExportStatus(prev => ({ ...prev, [crmName]: CRMExportStatus.EXPORTING }));
-    
+    info(`Exporting to ${crmIntegrations[crmName].name}...`, 2000);
+
     // Simulate API call
     setTimeout(() => {
       setCrmExportStatus(prev => ({ ...prev, [crmName]: CRMExportStatus.SUCCESS }));
+      success(`Successfully exported to ${crmIntegrations[crmName].name}`, 4000);
     }, 1500);
-  }, [pendingCrm]);
+  }, [pendingCrm, info, success]);
 
   const clearCrmLogs = useCallback(() => {
       setCrmExportStatus({
@@ -535,6 +539,7 @@ const App: React.FC = () => {
         callbacks: {
           onopen: async () => {
             logger.info("Gemini Live session opened successfully", undefined, 'session');
+            success('Call connected - intake session active', 4000);
             setCallState(CallState.ACTIVE);
             setTimeout(() => {
                 sessionPromise.then(session => {
@@ -655,10 +660,11 @@ const App: React.FC = () => {
           onerror: (e: ErrorEvent) => {
             logger.error("Gemini Live API Error", e, 'geminiApi');
             const isInitial = stateRef.current.callState === CallState.CONNECTING;
-            const msg = isInitial 
+            const msg = isInitial
                 ? "Failed to connect to AI Service. Please check your network connection and try again."
                 : "Connection to AI Service lost. Please restart the session.";
-            
+
+            error(msg, 5000);
             setErrorMessage(msg);
             setCallState(CallState.ERROR);
             cleanup();
@@ -688,11 +694,13 @@ const App: React.FC = () => {
 
     } catch (error) {
       const message = error instanceof Error ? error.message : "An unknown error occurred.";
-      setErrorMessage(`Startup Error: ${message}`);
+      const fullMsg = `Startup Error: ${message}`;
+      error(fullMsg, 5000);
+      setErrorMessage(fullMsg);
       setCallState(CallState.ERROR);
       cleanup();
     }
-  }, [cleanup, handleToolCall, settings]);
+  }, [cleanup, handleToolCall, settings, error]);
 
   const endCall = useCallback(async () => {
     if (stateRef.current.callState === CallState.PROCESSING || stateRef.current.callState === CallState.ENDED) return;
@@ -729,10 +737,13 @@ const App: React.FC = () => {
     try {
         const report = await generateLawyerReport(clientInfo, fullTranscript, isUrgent, urgencyReason);
         setLawyerReport(report);
+        success('Intake report generated successfully', 4000);
         try {
             const actionsResponse = await generateFollowUpActions(report);
             setFollowUpActions(actionsResponse.text);
+            success('Follow-up actions generated', 3000);
         } catch (actionError) {
+             warning("Could not generate follow-up checklist, but the main report is saved.", 4000);
              setErrorMessage("Action Generation Warning: Could not generate follow-up checklist, but the main report is saved.");
         }
     } catch (error) {
@@ -743,11 +754,12 @@ const App: React.FC = () => {
             else if (error.message.includes('API key')) msg = "Configuration Error: Invalid API Key.";
             else msg = `Report Error: ${error.message}`;
         }
+        error(msg, 5000);
         setErrorMessage(msg);
     } finally {
         setCallState(CallState.ENDED);
     }
-  }, [cleanup]);
+  }, [cleanup, success, warning, error]);
 
   useEffect(() => {
     return () => cleanup();

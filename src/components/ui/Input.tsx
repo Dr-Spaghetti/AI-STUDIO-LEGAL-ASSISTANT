@@ -20,6 +20,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         <input
           ref={ref}
+          aria-invalid={hasError}
+          aria-describedby={hasError ? `${props.id}-error` : undefined}
           className={`
             w-full bg-[#16181D] border rounded-lg p-3 text-white text-sm
             outline-none transition-colors
@@ -31,7 +33,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {hasError && error && (
-          <p className="text-xs text-red-400 mt-1">{error}</p>
+          <p id={`${props.id}-error`} className="text-xs text-red-400 mt-1">{error}</p>
         )}
         {helperText && !hasError && (
           <p className="text-xs text-gray-500 mt-1">{helperText}</p>
