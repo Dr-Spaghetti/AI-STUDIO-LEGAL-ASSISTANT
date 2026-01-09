@@ -416,53 +416,152 @@ const App: React.FC = () => {
 
         {/* Sidebar */}
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        
-        {/* Main Dashboard Area */}
-        <main className="flex-1 flex flex-col p-8 overflow-hidden relative">
-            
-            {/* Top Bar / Header is implicit in layout now */}
-            
-            {/* Content Grid */}
-            <div className="flex-1 grid grid-cols-12 gap-8 h-full">
-                
-                {/* Left Column: Live Intake (Takes up 7 cols) */}
-                <div className="col-span-7 h-full flex flex-col gap-6">
-                    {errorMessage && (
-                        <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-xs p-3 rounded-lg flex items-center gap-2">
-                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                             {errorMessage}
-                             <button onClick={() => setErrorMessage(null)} className="ml-auto hover:text-white">✕</button>
-                        </div>
-                    )}
 
-                    <div className="flex-1">
-                        <LiveIntakePanel 
-                            callState={callState}
-                            startCall={startCall}
-                            endCall={endCall}
-                            transcriptHistory={transcriptionHistory}
-                            currentInput={currentInputTranscription}
-                            currentOutput={currentOutputTranscription}
-                        />
+        {/* Main Content Area - Conditional Rendering Based on Active Tab */}
+        <main className="flex-1 flex flex-col p-8 overflow-hidden relative">
+
+            {/* Dashboard View - Default */}
+            {activeTab === 'dashboard' && (
+                <div className="flex-1 grid grid-cols-12 gap-8 h-full">
+                    {/* Left Column: Live Intake */}
+                    <div className="col-span-7 h-full flex flex-col gap-6">
+                        {errorMessage && (
+                            <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-xs p-3 rounded-lg flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                {errorMessage}
+                                <button onClick={() => setErrorMessage(null)} className="ml-auto hover:text-white">✕</button>
+                            </div>
+                        )}
+                        <div className="flex-1">
+                            <LiveIntakePanel
+                                callState={callState}
+                                startCall={startCall}
+                                endCall={endCall}
+                                transcriptHistory={transcriptionHistory}
+                                currentInput={currentInputTranscription}
+                                currentOutput={currentOutputTranscription}
+                            />
+                        </div>
+                    </div>
+                    {/* Right Column: Analytics & Case History */}
+                    <div className="col-span-5 h-full flex flex-col gap-8">
+                        <div className="h-[45%]">
+                            <AnalyticsPanel />
+                        </div>
+                        <div className="flex-1">
+                            <CaseHistoryPanel currentClient={clientInfo} />
+                        </div>
                     </div>
                 </div>
+            )}
 
-                {/* Right Column: Analytics & Stats (Takes up 5 cols) */}
-                <div className="col-span-5 h-full flex flex-col gap-8">
-                    {/* Analytics Section */}
-                    <div className="h-[45%]">
+            {/* Analytics Full View */}
+            {activeTab === 'analytics' && (
+                <div className="flex flex-col gap-6 w-full">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white mb-2">Analytics & Performance</h1>
+                        <p className="text-gray-400">Real-time metrics and performance analytics</p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                         <AnalyticsPanel />
                     </div>
+                </div>
+            )}
 
-                    {/* Recent Case History Section */}
+            {/* Case History Full View */}
+            {activeTab === 'history' && (
+                <div className="flex flex-col gap-6 w-full">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white mb-2">Case History</h1>
+                        <p className="text-gray-400">Complete record of all client intakes and cases</p>
+                    </div>
                     <div className="flex-1">
                         <CaseHistoryPanel currentClient={clientInfo} />
                     </div>
                 </div>
-            </div>
+            )}
 
-            {/* Bottom Status Bar */}
-            <StatusBar />
+            {/* Compliance View */}
+            {activeTab === 'compliance' && (
+                <div className="flex flex-col gap-6 w-full">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white mb-2">Compliance & Documentation</h1>
+                        <p className="text-gray-400">HIPAA compliance, audit logs, and documentation</p>
+                    </div>
+                    <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-8">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 rounded-lg bg-[#00FFA3]/10 border border-[#00FFA3] flex items-center justify-center">
+                                <svg className="w-6 h-6 text-[#00FFA3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-white">HIPAA Compliance</h2>
+                                <p className="text-sm text-gray-400">✓ Fully Compliant</p>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between p-4 bg-[#0F1115] rounded-lg border border-[#2D3139]">
+                                <span className="text-gray-300">Data Encryption</span>
+                                <span className="text-[#00FFA3] font-semibold">AES-256</span>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-[#0F1115] rounded-lg border border-[#2D3139]">
+                                <span className="text-gray-300">Authentication</span>
+                                <span className="text-[#00FFA3] font-semibold">OAuth 2.0</span>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-[#0F1115] rounded-lg border border-[#2D3139]">
+                                <span className="text-gray-300">Audit Logging</span>
+                                <span className="text-[#00FFA3] font-semibold">Enabled</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Settings View */}
+            {activeTab === 'settings' && (
+                <div className="flex flex-col gap-6 w-full">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white mb-2">Settings & Configuration</h1>
+                        <p className="text-gray-400">Configure AI personality, integrations, and preferences</p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
+                            <h3 className="text-lg font-bold text-white mb-4">AI Personality</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">AI Name</label>
+                                    <input type="text" value={settings.aiName} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Voice Tone</label>
+                                    <input type="text" value={settings.tone} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Voice Name</label>
+                                    <input type="text" value={settings.voiceName} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
+                            <h3 className="text-lg font-bold text-white mb-4">Firm Information</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Firm Name</label>
+                                    <input type="text" value={settings.firmName} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Firm Bio</label>
+                                    <textarea value={settings.firmBio} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm h-20" readOnly />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bottom Status Bar - Always Visible */}
+            {activeTab === 'dashboard' && <StatusBar />}
         </main>
     </div>
   );
