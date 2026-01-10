@@ -14,6 +14,8 @@ import WorkflowPanel from './components/WorkflowPanel';
 import SettingsPanel from './components/SettingsPanel';
 import StatusBar from './components/StatusBar';
 import { FullPageLoader } from './components/LoadingIndicator';
+import ConsentModal, { ConsentData } from './components/ConsentModal';
+import AIDisclaimerBanner from './components/AIDisclaimerBanner';
 
 import {
   CallState,
@@ -74,6 +76,28 @@ const App: React.FC = () => {
   const [isUrgent, setIsUrgent] = useState(false);
   const [urgencyReason, setUrgencyReason] = useState('');
 
+  // Consent State
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [consentData, setConsentData] = useState<ConsentData | null>(() => {
+    try {
+      const saved = localStorage.getItem('intakeConsent');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Check if consent was given within the last 24 hours
+        const consentTime = new Date(parsed.disclaimerAcceptedAt).getTime();
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        if (now - consentTime < twentyFourHours) {
+          return parsed;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  });
+  const [showDisclaimerExpanded, setShowDisclaimerExpanded] = useState(false);
+
   // Settings State
   const [settings, setSettings] = useState<ReceptionistSettings>(() => {
       try {
@@ -101,6 +125,13 @@ const App: React.FC = () => {
   useEffect(() => {
       localStorage.setItem('receptionistSettings', JSON.stringify(settings));
   }, [settings]);
+
+  // Handle consent acceptance
+  const handleConsentAccept = useCallback((consent: ConsentData) => {
+    setConsentData(consent);
+    localStorage.setItem('intakeConsent', JSON.stringify(consent));
+    setShowConsentModal(false);
+  }, []);
 
   const stateRef = useRef({
       callState,
@@ -192,7 +223,7 @@ const App: React.FC = () => {
     });
   }, []);
 
-  const startCall = useCallback(async () => {
+  const startCallInternal = useCallback(async () => {
     const apiKey = import.meta.env.VITE_API_KEY;
     if (!apiKey) {
       setErrorMessage("API Key Configuration Error: Please set VITE_API_KEY in your Vercel environment variables.");
@@ -208,7 +239,12 @@ const App: React.FC = () => {
 
     setCallState(CallState.CONNECTING);
     setErrorMessage(null);
-    setClientInfo({});
+    // Initialize client info with consent data (jurisdiction, contact preferences)
+    setClientInfo({
+      jurisdiction: consentData?.jurisdictionState || undefined,
+      smsOptIn: consentData?.smsOptIn || false,
+      emailOptIn: consentData?.emailOptIn || true,
+    });
     setTranscriptionHistory([]);
     setCurrentInputTranscription('');
     setCurrentOutputTranscription('');
@@ -426,6 +462,28 @@ const App: React.FC = () => {
     }
   }, [cleanup, handleToolCall, settings]);
 
+  // Wrapper function that checks for consent before starting
+  const startCall = useCallback(async () => {
+    if (!consentData) {
+      setShowConsentModal(true);
+      return;
+    }
+    await startCallInternal();
+  }, [consentData, startCallInternal]);
+
+  // Effect to start call after consent is given (when modal was shown from start button)
+  useEffect(() => {
+    if (consentData && showConsentModal === false && callState === CallState.IDLE) {
+      // Consent was just given, check if we should auto-start
+      // Only auto-start if the consent was just given (within last second)
+      const consentTime = new Date(consentData.disclaimerAcceptedAt).getTime();
+      const now = Date.now();
+      if (now - consentTime < 1000) {
+        startCallInternal();
+      }
+    }
+  }, [consentData, showConsentModal, callState, startCallInternal]);
+
   const endCall = useCallback(async () => {
     if (stateRef.current.callState === CallState.PROCESSING || stateRef.current.callState === CallState.ENDED) return;
     setCallState(CallState.ENDED);
@@ -437,16 +495,35 @@ const App: React.FC = () => {
   }, [cleanup]);
 
   return (
-    <div className="flex h-screen w-full bg-[#050505] text-white overflow-hidden">
-        {/* Loading Overlay */}
-        {(callState === CallState.CONNECTING || callState === CallState.PROCESSING) && (
-          <FullPageLoader
-            message={callState === CallState.CONNECTING ? 'Connecting to Gemini Live API...' : 'Generating Report...'}
-          />
-        )}
+    <div className="flex flex-col h-screen w-full bg-[#050505] text-white overflow-hidden">
+        {/* AI Disclaimer Banner - Always Visible */}
+        <AIDisclaimerBanner
+          firmName={settings.firmName}
+          primaryColor="#00FFC8"
+          variant="full"
+          onLearnMore={() => setShowDisclaimerExpanded(true)}
+        />
 
-        {/* Sidebar */}
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        {/* Main Content Container */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Loading Overlay */}
+          {(callState === CallState.CONNECTING || callState === CallState.PROCESSING) && (
+            <FullPageLoader
+              message={callState === CallState.CONNECTING ? 'Connecting to Gemini Live API...' : 'Generating Report...'}
+            />
+          )}
+
+          {/* Consent Modal */}
+          {showConsentModal && (
+            <ConsentModal
+              onAccept={handleConsentAccept}
+              firmName={settings.firmName}
+              primaryColor="#00FFC8"
+            />
+          )}
+
+          {/* Sidebar */}
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Main Content Area - Conditional Rendering Based on Active Tab */}
         <main className="flex-1 flex flex-col p-8 overflow-hidden relative">
@@ -522,6 +599,7 @@ const App: React.FC = () => {
             {/* Bottom Status Bar - Only on Dashboard */}
             {activeTab === 'dashboard' && <StatusBar />}
         </main>
+        </div>
     </div>
   );
 };
