@@ -291,19 +291,37 @@ const App: React.FC = () => {
             audioWorkletNodeRef.current = workletNode;
 
             workletNode.port.onmessage = (event) => {
-              const pcmBlob = {
-                data: encode(new Uint8Array(event.data.buffer)),
-                mimeType: 'audio/pcm;rate=16000',
-              };
-              sessionPromise.then((session) => {
-                 session.sendRealtimeInput({ media: pcmBlob });
-              }).catch(console.error);
+              try {
+                if (!event.data || !event.data.buffer) {
+                  console.warn('[DEBUG] Received invalid audio data from worklet');
+                  return;
+                }
+                const pcmBlob = {
+                  data: encode(new Uint8Array(event.data.buffer)),
+                  mimeType: 'audio/pcm;rate=16000',
+                };
+                sessionPromise.then((session) => {
+                   if (session && typeof session.sendRealtimeInput === 'function') {
+                     session.sendRealtimeInput({ media: pcmBlob });
+                   }
+                }).catch((err) => {
+                  console.error('[DEBUG] Error sending audio to session:', err);
+                });
+              } catch (error) {
+                console.error('[DEBUG] Error processing worklet message:', error);
+              }
             };
-            
+
+            workletNode.port.onerror = (error) => {
+              console.error('[DEBUG] AudioWorklet error:', error);
+            };
+
             micSource.connect(workletNode);
             workletNode.connect(inputAudioContext.destination);
           },
           onmessage: async (message: LiveServerMessage) => {
+            // Use unstable_batchedUpdates to batch multiple state updates
+            // This prevents excessive re-renders from rapid transcription updates
             if (message.serverContent?.outputTranscription) {
               setCurrentOutputTranscription(prev => prev + message.serverContent!.outputTranscription!.text);
             } else if (message.serverContent?.inputTranscription) {
@@ -416,8 +434,8 @@ const App: React.FC = () => {
 
         {/* Sidebar */}
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        
-        {/* Main Dashboard Area */}
+
+        {/* Main Content Area - Conditional Rendering Based on Active Tab */}
         <main className="flex-1 flex flex-col p-8 overflow-hidden relative">
 
             {/* Dashboard View - Default */}
@@ -686,6 +704,11 @@ const App: React.FC = () => {
                                         <option value="office365">Office 365</option>
                                         <option value="smtp">Custom SMTP</option>
                                     </select>
+                              <input type="text" value={settings.firmName} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Firm Bio</label>
+                                    <textarea value={settings.firmBio} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm h-20" readOnly />
                                 </div>
                             </div>
                         </div>
