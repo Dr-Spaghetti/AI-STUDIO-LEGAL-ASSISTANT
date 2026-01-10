@@ -291,19 +291,37 @@ const App: React.FC = () => {
             audioWorkletNodeRef.current = workletNode;
 
             workletNode.port.onmessage = (event) => {
-              const pcmBlob = {
-                data: encode(new Uint8Array(event.data.buffer)),
-                mimeType: 'audio/pcm;rate=16000',
-              };
-              sessionPromise.then((session) => {
-                 session.sendRealtimeInput({ media: pcmBlob });
-              }).catch(console.error);
+              try {
+                if (!event.data || !event.data.buffer) {
+                  console.warn('[DEBUG] Received invalid audio data from worklet');
+                  return;
+                }
+                const pcmBlob = {
+                  data: encode(new Uint8Array(event.data.buffer)),
+                  mimeType: 'audio/pcm;rate=16000',
+                };
+                sessionPromise.then((session) => {
+                   if (session && typeof session.sendRealtimeInput === 'function') {
+                     session.sendRealtimeInput({ media: pcmBlob });
+                   }
+                }).catch((err) => {
+                  console.error('[DEBUG] Error sending audio to session:', err);
+                });
+              } catch (error) {
+                console.error('[DEBUG] Error processing worklet message:', error);
+              }
             };
-            
+
+            workletNode.port.onerror = (error) => {
+              console.error('[DEBUG] AudioWorklet error:', error);
+            };
+
             micSource.connect(workletNode);
             workletNode.connect(inputAudioContext.destination);
           },
           onmessage: async (message: LiveServerMessage) => {
+            // Use unstable_batchedUpdates to batch multiple state updates
+            // This prevents excessive re-renders from rapid transcription updates
             if (message.serverContent?.outputTranscription) {
               setCurrentOutputTranscription(prev => prev + message.serverContent!.outputTranscription!.text);
             } else if (message.serverContent?.inputTranscription) {
