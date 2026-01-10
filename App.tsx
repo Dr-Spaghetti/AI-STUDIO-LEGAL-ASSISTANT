@@ -9,6 +9,9 @@ import Sidebar from './components/Sidebar';
 import LiveIntakePanel from './components/LiveIntakePanel';
 import AnalyticsPanel from './components/AnalyticsPanel';
 import CaseHistoryPanel from './components/CaseHistoryPanel';
+import CompliancePanel from './components/CompliancePanel';
+import WorkflowPanel from './components/WorkflowPanel';
+import SettingsPanel from './components/SettingsPanel';
 import StatusBar from './components/StatusBar';
 import { FullPageLoader } from './components/LoadingIndicator';
 
@@ -47,7 +50,17 @@ const DEFAULT_SETTINGS: ReceptionistSettings = {
     openingLine: "Hi thank you for calling Ted Law Firm. My name is Sarah, may I ask who is calling today?",
     urgencyKeywords: ['court date', 'deadline', 'statute of limitations', 'served papers', 'arrested', 'police'],
     voiceName: 'Kore',
-    firmBio: "We are a boutique law firm specializing in Personal Injury and Family Law. Located at 100 Legal Way, New York, NY."
+    firmBio: "We are a boutique law firm specializing in Personal Injury and Family Law. Located at 100 Legal Way, New York, NY.",
+    // Extended defaults
+    hipaaMode: false,
+    legalDisclaimer: true,
+    auditLogging: true,
+    callRecording: false,
+    emailNotifications: true,
+    smsNotifications: false,
+    language: 'en',
+    timezone: 'America/New_York',
+    apiKeyConfigured: true,
 };
 
 const App: React.FC = () => {
@@ -65,7 +78,7 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<ReceptionistSettings>(() => {
       try {
           const saved = localStorage.getItem('receptionistSettings');
-          return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+          return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
       } catch (e) {
           return DEFAULT_SETTINGS;
       }
@@ -79,7 +92,7 @@ const App: React.FC = () => {
   const audioWorkletNodeRef = useRef<AudioWorkletNode | null>(null);
   const nextAudioStartTimeRef = useRef(0);
   const audioSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
-  
+
   // Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -121,7 +134,7 @@ const App: React.FC = () => {
 
     liveSessionRef.current?.then(session => session.close()).catch(console.error);
     liveSessionRef.current = null;
-    
+
     micStreamRef.current?.getTracks().forEach(track => track.stop());
     micStreamRef.current = null;
 
@@ -135,7 +148,7 @@ const App: React.FC = () => {
     inputAudioContextRef.current = null;
     outputAudioContextRef.current = null;
     mixedAudioDestinationRef.current = null;
-    
+
     audioSourcesRef.current.forEach(source => source.stop());
     audioSourcesRef.current.clear();
     nextAudioStartTimeRef.current = 0;
@@ -285,7 +298,7 @@ const App: React.FC = () => {
             } finally {
               URL.revokeObjectURL(workletURL);
             }
-            
+
             const micSource = inputAudioContext.createMediaStreamSource(stream);
             const workletNode = new AudioWorkletNode(inputAudioContext, 'audio-processor');
             audioWorkletNodeRef.current = workletNode;
@@ -347,7 +360,7 @@ const App: React.FC = () => {
             const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
             if (base64Audio && outputAudioContextRef.current) {
               const audioContext = outputAudioContextRef.current;
-              
+
               if (stateRef.current.settings.responseDelay > 0) {
                  const now = audioContext.currentTime;
                  if (nextAudioStartTimeRef.current < now) {
@@ -444,7 +457,7 @@ const App: React.FC = () => {
                     {/* Left Column: Live Intake */}
                     <div className="col-span-7 h-full flex flex-col gap-6">
                         {errorMessage && (
-                            <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-xs p-3 rounded-lg flex items-center gap-2">
+                            <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-sm p-3 rounded-lg flex items-center gap-2">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                                 {errorMessage}
                                 <button onClick={() => setErrorMessage(null)} className="ml-auto hover:text-white">✕</button>
@@ -475,243 +488,33 @@ const App: React.FC = () => {
 
             {/* Analytics Full View */}
             {activeTab === 'analytics' && (
-                <div className="flex flex-col gap-6 w-full">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Analytics & Performance</h1>
-                        <p className="text-gray-400">Real-time metrics and performance analytics</p>
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        <AnalyticsPanel />
-                    </div>
-                </div>
+                <AnalyticsPanel fullPage={true} />
             )}
 
             {/* Case History Full View */}
             {activeTab === 'history' && (
-                <div className="flex flex-col gap-6 w-full">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Case History</h1>
-                        <p className="text-gray-400">Complete record of all client intakes and cases</p>
-                    </div>
-                    <div className="flex-1">
-                        <CaseHistoryPanel currentClient={clientInfo} />
-                    </div>
-                </div>
+                <CaseHistoryPanel currentClient={clientInfo} fullPage={true} />
+            )}
+
+            {/* Workflow View */}
+            {activeTab === 'workflow' && (
+                <WorkflowPanel />
             )}
 
             {/* Compliance View */}
             {activeTab === 'compliance' && (
-                <div className="flex flex-col gap-6 w-full">
-                    <div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Compliance & Documentation</h1>
-                        <p className="text-gray-400">HIPAA compliance, audit logs, and documentation</p>
-                    </div>
-                    <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-8">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 rounded-lg bg-[#00FFA3]/10 border border-[#00FFA3] flex items-center justify-center">
-                                <svg className="w-6 h-6 text-[#00FFA3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <h2 className="text-xl font-bold text-white">HIPAA Compliance</h2>
-                                <p className="text-sm text-gray-400">✓ Fully Compliant</p>
-                            </div>
-                        </div>
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-[#0F1115] rounded-lg border border-[#2D3139]">
-                                <span className="text-gray-300">Data Encryption</span>
-                                <span className="text-[#00FFA3] font-semibold">AES-256</span>
-                            </div>
-                            <div className="flex items-center justify-between p-4 bg-[#0F1115] rounded-lg border border-[#2D3139]">
-                                <span className="text-gray-300">Authentication</span>
-                                <span className="text-[#00FFA3] font-semibold">OAuth 2.0</span>
-                            </div>
-                            <div className="flex items-center justify-between p-4 bg-[#0F1115] rounded-lg border border-[#2D3139]">
-                                <span className="text-gray-300">Audit Logging</span>
-                                <span className="text-[#00FFA3] font-semibold">Enabled</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <CompliancePanel />
             )}
 
-            {/* Settings View - NOW EDITABLE */}
+            {/* Settings View */}
             {activeTab === 'settings' && (
-                <div className="flex flex-col gap-6 w-full overflow-y-auto">
-                    <div>
+                <div className="flex flex-col h-full overflow-hidden">
+                    <div className="mb-6">
                         <h1 className="text-3xl font-bold text-white mb-2">Settings & Configuration</h1>
-                        <p className="text-gray-400">Configure AI personality, integrations, and preferences</p>
+                        <p className="text-lg text-gray-400">Configure AI personality, integrations, and preferences</p>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
-                        {/* AI Personality Settings */}
-                        <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
-                            <h3 className="text-lg font-bold text-white mb-4">AI Personality</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">AI Name</label>
-                                    <input
-                                        type="text"
-                                        value={settings.aiName}
-                                        onChange={(e) => setSettings({...settings, aiName: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                        placeholder="Enter AI name"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Voice Tone</label>
-                                    <select
-                                        value={settings.tone}
-                                        onChange={(e) => setSettings({...settings, tone: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                    >
-                                        <option value="Professional">Professional</option>
-                                        <option value="Friendly">Friendly</option>
-                                        <option value="Formal">Formal</option>
-                                        <option value="Conversational">Conversational</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Voice Name</label>
-                                    <select
-                                        value={settings.voiceName}
-                                        onChange={(e) => setSettings({...settings, voiceName: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                    >
-                                        <option value="Kore">Kore</option>
-                                        <option value="Aoede">Aoede</option>
-                                        <option value="Charon">Charon</option>
-                                        <option value="Fenrir">Fenrir</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Response Delay (ms)</label>
-                                    <input
-                                        type="number"
-                                        value={settings.responseDelay}
-                                        onChange={(e) => setSettings({...settings, responseDelay: parseInt(e.target.value) || 0})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                        placeholder="e.g., 500"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Firm Information Settings */}
-                        <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
-                            <h3 className="text-lg font-bold text-white mb-4">Firm Information</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Firm Name</label>
-                                    <input
-                                        type="text"
-                                        value={settings.firmName}
-                                        onChange={(e) => setSettings({...settings, firmName: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                        placeholder="Enter firm name"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Firm Bio</label>
-                                    <textarea
-                                        value={settings.firmBio}
-                                        onChange={(e) => setSettings({...settings, firmBio: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm h-24 focus:border-[#00FFA3] focus:outline-none transition resize-none"
-                                        placeholder="Enter firm bio/description"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Practice Areas</label>
-                                    <input
-                                        type="text"
-                                        value={settings.practiceAreas}
-                                        onChange={(e) => setSettings({...settings, practiceAreas: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                        placeholder="e.g., Corporate, Family, IP Law"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Advanced Settings */}
-                        <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
-                            <h3 className="text-lg font-bold text-white mb-4">Advanced Settings</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Language</label>
-                                    <select
-                                        value={settings.language || 'en'}
-                                        onChange={(e) => setSettings({...settings, language: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                    >
-                                        <option value="en">English</option>
-                                        <option value="es">Spanish</option>
-                                        <option value="fr">French</option>
-                                        <option value="de">German</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Timezone</label>
-                                    <input
-                                        type="text"
-                                        value={settings.timezone || 'UTC'}
-                                        onChange={(e) => setSettings({...settings, timezone: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                        placeholder="e.g., EST, PST"
-                                    />
-                                </div>
-                                <div className="flex items-center gap-2 pt-2">
-                                    <input
-                                        type="checkbox"
-                                        id="recordCalls"
-                                        checked={settings.recordCalls || false}
-                                        onChange={(e) => setSettings({...settings, recordCalls: e.target.checked})}
-                                        className="w-4 h-4 rounded border-[#2D3139] bg-[#0F1115] text-[#00FFA3] cursor-pointer"
-                                    />
-                                    <label htmlFor="recordCalls" className="text-sm text-gray-400 cursor-pointer">
-                                        Enable Call Recording
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Integration Settings */}
-                        <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
-                            <h3 className="text-lg font-bold text-white mb-4">Integrations</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Default CRM</label>
-                                    <select
-                                        value={settings.defaultCRM || 'none'}
-                                        onChange={(e) => setSettings({...settings, defaultCRM: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                    >
-                                        <option value="none">None</option>
-                                        <option value="clio">Clio</option>
-                                        <option value="mycase">MyCase</option>
-                                        <option value="lawmatics">Lawmatics</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Email Service</label>
-                                    <select
-                                        value={settings.emailService || 'none'}
-                                        onChange={(e) => setSettings({...settings, emailService: e.target.value})}
-                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
-                                    >
-                                        <option value="none">None</option>
-                                        <option value="gmail">Gmail</option>
-                                        <option value="office365">Office 365</option>
-                                        <option value="smtp">Custom SMTP</option>
-                                    </select>
-                              <input type="text" value={settings.firmName} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
-                                </div>
-                                <div>
-                                    <label className="text-sm text-gray-400 block mb-2">Firm Bio</label>
-                                    <textarea value={settings.firmBio} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm h-20" readOnly />
-                                </div>
-                            </div>
-                        </div>
+                    <div className="flex-1 overflow-hidden">
+                        <SettingsPanel settings={settings} setSettings={setSettings} />
                     </div>
                 </div>
             )}

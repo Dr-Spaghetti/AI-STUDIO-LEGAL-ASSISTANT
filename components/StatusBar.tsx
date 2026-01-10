@@ -4,14 +4,14 @@ const StatusBar = () => {
   return (
     <div className="h-16 mt-6 glass-panel rounded-2xl flex items-center justify-between px-6 shrink-0 relative overflow-hidden">
         {/* Decorative Glow Line */}
-        <div className="absolute top-0 left-10 right-10 h-[1px] bg-gradient-to-r from-transparent via-[#00FFA3] to-transparent opacity-30"></div>
+        <div className="absolute top-0 left-10 right-10 h-[1px] bg-gradient-to-r from-transparent via-[#00FFC8] to-transparent opacity-30"></div>
 
         <div className="flex items-center gap-6">
             <h3 className="text-sm font-bold text-gray-400 tracking-wide uppercase mr-4">System Status & Settings</h3>
             
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00FFA3]/10 border border-[#00FFA3]/30">
-                <div className="w-2 h-2 rounded-full bg-[#00FFA3] shadow-[0_0_8px_#00FFA3]"></div>
-                <span className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider">System Ready</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00FFC8]/10 border border-[#00FFC8]/30">
+                <div className="w-2 h-2 rounded-full bg-[#00FFC8] shadow-[0_0_8px_#00FFC8]"></div>
+                <span className="text-xs font-bold text-[#00FFC8] uppercase tracking-wider">System Ready</span>
             </div>
             
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1E2128] border border-[#2D3139]">
@@ -23,7 +23,7 @@ const StatusBar = () => {
         <div className="flex items-center gap-6">
              <div className="flex items-center gap-3">
                  <span className="text-xs font-medium text-gray-400 uppercase">AI Persona</span>
-                 <div className="w-12 h-6 bg-[#00FFA3] rounded-full p-1 cursor-pointer flex justify-end shadow-[0_0_10px_rgba(0,255,163,0.3)]">
+                 <div className="w-12 h-6 bg-[#00FFC8] rounded-full p-1 cursor-pointer flex justify-end shadow-[0_0_10px_rgba(0,255,163,0.3)]">
                      <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
                  </div>
              </div>
