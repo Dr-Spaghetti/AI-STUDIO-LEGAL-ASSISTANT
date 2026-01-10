@@ -536,37 +536,175 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {/* Settings View */}
+            {/* Settings View - NOW EDITABLE */}
             {activeTab === 'settings' && (
-                <div className="flex flex-col gap-6 w-full">
+                <div className="flex flex-col gap-6 w-full overflow-y-auto">
                     <div>
                         <h1 className="text-3xl font-bold text-white mb-2">Settings & Configuration</h1>
                         <p className="text-gray-400">Configure AI personality, integrations, and preferences</p>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-8">
+                        {/* AI Personality Settings */}
                         <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
                             <h3 className="text-lg font-bold text-white mb-4">AI Personality</h3>
                             <div className="space-y-4">
                                 <div>
                                     <label className="text-sm text-gray-400 block mb-2">AI Name</label>
-                                    <input type="text" value={settings.aiName} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
+                                    <input
+                                        type="text"
+                                        value={settings.aiName}
+                                        onChange={(e) => setSettings({...settings, aiName: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                        placeholder="Enter AI name"
+                                    />
                                 </div>
                                 <div>
                                     <label className="text-sm text-gray-400 block mb-2">Voice Tone</label>
-                                    <input type="text" value={settings.tone} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
+                                    <select
+                                        value={settings.tone}
+                                        onChange={(e) => setSettings({...settings, tone: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                    >
+                                        <option value="Professional">Professional</option>
+                                        <option value="Friendly">Friendly</option>
+                                        <option value="Formal">Formal</option>
+                                        <option value="Conversational">Conversational</option>
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="text-sm text-gray-400 block mb-2">Voice Name</label>
-                                    <input type="text" value={settings.voiceName} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
+                                    <select
+                                        value={settings.voiceName}
+                                        onChange={(e) => setSettings({...settings, voiceName: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                    >
+                                        <option value="Kore">Kore</option>
+                                        <option value="Aoede">Aoede</option>
+                                        <option value="Charon">Charon</option>
+                                        <option value="Fenrir">Fenrir</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Response Delay (ms)</label>
+                                    <input
+                                        type="number"
+                                        value={settings.responseDelay}
+                                        onChange={(e) => setSettings({...settings, responseDelay: parseInt(e.target.value) || 0})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                        placeholder="e.g., 500"
+                                    />
                                 </div>
                             </div>
                         </div>
+
+                        {/* Firm Information Settings */}
                         <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
                             <h3 className="text-lg font-bold text-white mb-4">Firm Information</h3>
                             <div className="space-y-4">
                                 <div>
                                     <label className="text-sm text-gray-400 block mb-2">Firm Name</label>
-                                    <input type="text" value={settings.firmName} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
+                                    <input
+                                        type="text"
+                                        value={settings.firmName}
+                                        onChange={(e) => setSettings({...settings, firmName: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                        placeholder="Enter firm name"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Firm Bio</label>
+                                    <textarea
+                                        value={settings.firmBio}
+                                        onChange={(e) => setSettings({...settings, firmBio: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm h-24 focus:border-[#00FFA3] focus:outline-none transition resize-none"
+                                        placeholder="Enter firm bio/description"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Practice Areas</label>
+                                    <input
+                                        type="text"
+                                        value={settings.practiceAreas}
+                                        onChange={(e) => setSettings({...settings, practiceAreas: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                        placeholder="e.g., Corporate, Family, IP Law"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Advanced Settings */}
+                        <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
+                            <h3 className="text-lg font-bold text-white mb-4">Advanced Settings</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Language</label>
+                                    <select
+                                        value={settings.language || 'en'}
+                                        onChange={(e) => setSettings({...settings, language: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                    >
+                                        <option value="en">English</option>
+                                        <option value="es">Spanish</option>
+                                        <option value="fr">French</option>
+                                        <option value="de">German</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Timezone</label>
+                                    <input
+                                        type="text"
+                                        value={settings.timezone || 'UTC'}
+                                        onChange={(e) => setSettings({...settings, timezone: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                        placeholder="e.g., EST, PST"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2 pt-2">
+                                    <input
+                                        type="checkbox"
+                                        id="recordCalls"
+                                        checked={settings.recordCalls || false}
+                                        onChange={(e) => setSettings({...settings, recordCalls: e.target.checked})}
+                                        className="w-4 h-4 rounded border-[#2D3139] bg-[#0F1115] text-[#00FFA3] cursor-pointer"
+                                    />
+                                    <label htmlFor="recordCalls" className="text-sm text-gray-400 cursor-pointer">
+                                        Enable Call Recording
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Integration Settings */}
+                        <div className="bg-[#1E2128] border border-[#2D3139] rounded-lg p-6">
+                            <h3 className="text-lg font-bold text-white mb-4">Integrations</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Default CRM</label>
+                                    <select
+                                        value={settings.defaultCRM || 'none'}
+                                        onChange={(e) => setSettings({...settings, defaultCRM: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                    >
+                                        <option value="none">None</option>
+                                        <option value="clio">Clio</option>
+                                        <option value="mycase">MyCase</option>
+                                        <option value="lawmatics">Lawmatics</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-sm text-gray-400 block mb-2">Email Service</label>
+                                    <select
+                                        value={settings.emailService || 'none'}
+                                        onChange={(e) => setSettings({...settings, emailService: e.target.value})}
+                                        className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm focus:border-[#00FFA3] focus:outline-none transition"
+                                    >
+                                        <option value="none">None</option>
+                                        <option value="gmail">Gmail</option>
+                                        <option value="office365">Office 365</option>
+                                        <option value="smtp">Custom SMTP</option>
+                                    </select>
+                              <input type="text" value={settings.firmName} className="w-full bg-[#0F1115] border border-[#2D3139] rounded px-3 py-2 text-white text-sm" readOnly />
                                 </div>
                                 <div>
                                     <label className="text-sm text-gray-400 block mb-2">Firm Bio</label>
@@ -578,7 +716,7 @@ const App: React.FC = () => {
                 </div>
             )}
 
-            {/* Bottom Status Bar - Always Visible */}
+            {/* Bottom Status Bar - Only on Dashboard */}
             {activeTab === 'dashboard' && <StatusBar />}
         </main>
     </div>
