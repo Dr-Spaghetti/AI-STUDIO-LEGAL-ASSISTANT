@@ -204,11 +204,18 @@ const App: React.FC = () => {
     audioChunksRef.current = [];
 
     try {
+      console.log('[DEBUG] startCall: Initializing Gemini Live API');
+      console.log('[DEBUG] API Key present:', !!apiKey);
+
       const ai = new GoogleGenAI({ apiKey });
+      console.log('[DEBUG] GoogleGenAI initialized');
+      console.log('[DEBUG] ai.live available:', !!ai.live);
+
       const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       inputAudioContextRef.current = inputAudioContext;
       const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       outputAudioContextRef.current = outputAudioContext;
+      console.log('[DEBUG] Audio contexts created');
 
       // --- Audio Recording Setup ---
       const mixedDest = outputAudioContext.createMediaStreamDestination();
@@ -218,6 +225,7 @@ const App: React.FC = () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micStreamRef.current = stream;
+        console.log('[DEBUG] Microphone stream obtained');
       } catch (err: any) {
         setErrorMessage("Microphone Error");
         setCallState(CallState.ERROR);
@@ -237,12 +245,14 @@ const App: React.FC = () => {
           }
       };
       recorder.start();
+      console.log('[DEBUG] MediaRecorder started');
 
+      console.log('[DEBUG] Calling ai.live.connect with model: gemini-2.5-flash-native-audio-preview-09-2025');
       const sessionPromise = ai.live.connect({
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
           onopen: async () => {
-            console.log("Session opened.");
+            console.log('[DEBUG] ✅ Session opened successfully');
             setCallState(CallState.ACTIVE);
             setTimeout(() => {
                 sessionPromise.then(session => {
@@ -361,8 +371,13 @@ const App: React.FC = () => {
             }
           },
           onerror: (e: ErrorEvent) => {
-            console.error("Gemini Live API Error:", e);
-            setErrorMessage("Connection Error");
+            console.error('[DEBUG] ❌ Gemini Live API Error:', e);
+            console.error('[DEBUG] Error details:', {
+              message: e.message,
+              type: e.type,
+              error: (e as any).error?.message,
+            });
+            setErrorMessage(`Connection Error: ${(e as any).error?.message || 'Unknown error'}`);
             setCallState(CallState.ERROR);
             cleanup();
           },
@@ -389,6 +404,8 @@ const App: React.FC = () => {
 
     } catch (error) {
       const message = error instanceof Error ? error.message : "An unknown error occurred.";
+      console.error('[DEBUG] ❌ STARTUP ERROR in startCall:', error);
+      console.error('[DEBUG] Error stack:', (error as any)?.stack);
       setErrorMessage(`Startup Error: ${message}`);
       setCallState(CallState.ERROR);
       cleanup();
