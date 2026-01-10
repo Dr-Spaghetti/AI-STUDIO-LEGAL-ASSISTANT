@@ -37,22 +37,31 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
     return item.status === activeFilter;
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'booked': return 'bg-[#00FFC8]/20 text-[#00FFC8] border-[#00FFC8]/30';
-      case 'follow-up': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'pending': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'closed': return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+      case 'booked':
+        return <span className="status-badge active"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div>Booked</span>;
+      case 'follow-up':
+        return <span className="status-badge warning"><div className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]"></div>Follow-up</span>;
+      case 'pending':
+        return <span className="status-badge inactive"><div className="w-1.5 h-1.5 rounded-full bg-[#6B7280]"></div>Pending</span>;
+      case 'closed':
+        return <span className="status-badge inactive"><div className="w-1.5 h-1.5 rounded-full bg-[#6B7280]"></div>Closed</span>;
+      default:
+        return <span className="status-badge inactive">{status}</span>;
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityBadge = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-green-500';
-      default: return 'bg-gray-500';
+      case 'high':
+        return <span className="priority-badge high">High</span>;
+      case 'medium':
+        return <span className="priority-badge medium">Medium</span>;
+      case 'low':
+        return <span className="priority-badge low">Low</span>;
+      default:
+        return <span className="priority-badge">{priority}</span>;
     }
   };
 
@@ -62,12 +71,12 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Case History</h1>
-            <p className="text-lg text-gray-400">Complete record of all client intakes and cases</p>
+            <h1 className="text-[28px] font-bold text-white mb-2">Case History</h1>
+            <p className="text-[15px] text-[#9CA3AF]">Complete record of all client intakes and cases</p>
           </div>
-          <button className="px-6 py-3 bg-[#00FFC8] text-black font-semibold rounded-lg hover:bg-[#00FFC8]/90 transition flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          <button className="px-5 py-2.5 bg-[#00FFC8] text-black text-[14px] font-semibold rounded-lg hover:bg-[#00FFC8]/90 transition flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
             Export CSV
           </button>
@@ -83,104 +92,92 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
             <button
               key={tab.id}
               onClick={() => setActiveFilter(tab.id as any)}
-              className={`px-5 py-3 rounded-lg text-base font-medium transition flex items-center gap-2 ${
-                activeFilter === tab.id
-                  ? 'bg-[#00FFC8]/20 text-[#00FFC8] border border-[#00FFC8]/30'
-                  : 'bg-[#1E2128] text-gray-400 border border-[#2D3139] hover:border-[#00FFC8]/30'
-              }`}
+              className={`tab-button flex items-center gap-2 ${activeFilter === tab.id ? 'active' : ''}`}
             >
               {tab.label}
-              <span className={`px-2 py-0.5 rounded-full text-sm ${
-                activeFilter === tab.id ? 'bg-[#00FFC8]/30' : 'bg-[#2D3139]'
+              <span className={`px-2 py-0.5 rounded-full text-[12px] ${
+                activeFilter === tab.id ? 'bg-[#00FFC8]/20 text-[#00FFC8]' : 'bg-[#2D3139] text-[#6B7280]'
               }`}>{tab.count}</span>
             </button>
           ))}
         </div>
 
         {/* Table */}
-        <div className="flex-1 bg-[#1E2128] border border-[#2D3139] rounded-xl overflow-hidden">
-          {/* Table Header */}
-          <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[#0F1115] border-b border-[#2D3139] text-sm font-semibold text-gray-400 uppercase tracking-wider">
-            <div className="col-span-1">Date</div>
-            <div className="col-span-3">Client</div>
-            <div className="col-span-2">Case Type</div>
-            <div className="col-span-2">Status</div>
-            <div className="col-span-2">Priority</div>
-            <div className="col-span-2 text-right">Actions</div>
-          </div>
-
-          {/* Table Body */}
-          <div className="overflow-y-auto max-h-[calc(100vh-380px)]">
-            {/* Live Client Row (if active) */}
-            {currentClient && currentClient.name && (
-              <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-[#00FFC8]/10 border-b border-[#00FFC8]/30 items-center animate-pulse">
-                <div className="col-span-1 text-base text-white font-mono">Now</div>
-                <div className="col-span-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-[#00FFC8] shadow-[0_0_10px_#00FFC8]"></div>
-                    <div>
-                      <p className="text-base font-medium text-white">{currentClient.name}</p>
-                      <p className="text-sm text-gray-500">{currentClient.email || 'Gathering info...'}</p>
+        <div className="flex-1 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden">
+          <table className="data-table">
+            <thead>
+              <tr className="bg-[#0F1115]">
+                <th style={{ width: '10%' }}>Date</th>
+                <th style={{ width: '25%' }}>Client</th>
+                <th style={{ width: '18%' }}>Case Type</th>
+                <th style={{ width: '15%' }}>Status</th>
+                <th style={{ width: '12%' }}>Priority</th>
+                <th style={{ width: '20%', textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody className="overflow-y-auto">
+              {/* Live Client Row (if active) */}
+              {currentClient && currentClient.name && (
+                <tr className="bg-[#00FFC8]/10 border-l-2 border-l-[#00FFC8]">
+                  <td className="font-mono text-[#00FFC8]">Now</td>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-[#00FFC8] shadow-[0_0_8px_#00FFC8] animate-pulse"></div>
+                      <div>
+                        <p className="text-[14px] font-medium text-white">{currentClient.name}</p>
+                        <p className="text-[12px] text-[#6B7280]">{currentClient.email || 'Gathering info...'}</p>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="col-span-2 text-base text-gray-400">-</div>
-                <div className="col-span-2">
-                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-[#00FFC8]/20 text-[#00FFC8] border border-[#00FFC8]/30">
-                    Active
-                  </span>
-                </div>
-                <div className="col-span-2">-</div>
-                <div className="col-span-2 text-right">
-                  <button className="p-2 hover:bg-[#2D3139] rounded-lg transition">
-                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            )}
+                  </td>
+                  <td className="text-[#6B7280]">-</td>
+                  <td><span className="status-badge active"><div className="w-1.5 h-1.5 rounded-full bg-[#00FFC8] animate-pulse"></div>Active</span></td>
+                  <td>-</td>
+                  <td className="text-right">
+                    <button className="p-2 hover:bg-[#2D3139] rounded-lg transition">
+                      <svg className="w-5 h-5 text-[#6B7280]" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              )}
 
-            {filteredHistory.map((item) => (
-              <div key={item.id} className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-[#2D3139] items-center hover:bg-[#0F1115] transition group">
-                <div className="col-span-1 text-base text-gray-400 font-mono">{item.date}</div>
-                <div className="col-span-3">
-                  <div>
-                    <p className="text-base font-medium text-white group-hover:text-[#00FFC8] transition">{item.clientName}</p>
-                    <p className="text-sm text-gray-500">{item.email}</p>
-                  </div>
-                </div>
-                <div className="col-span-2 text-base text-gray-400">{item.caseType}</div>
-                <div className="col-span-2">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium border capitalize ${getStatusColor(item.status)}`}>
-                    {item.status}
-                  </span>
-                </div>
-                <div className="col-span-2 flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${getPriorityColor(item.priority)}`}></div>
-                  <span className="text-base text-gray-400 capitalize">{item.priority}</span>
-                </div>
-                <div className="col-span-2 text-right flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition">
-                  <button className="p-2 hover:bg-[#2D3139] rounded-lg transition" title="View Details">
-                    <svg className="w-5 h-5 text-gray-400 hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-                  <button className="p-2 hover:bg-[#2D3139] rounded-lg transition" title="Call">
-                    <svg className="w-5 h-5 text-gray-400 hover:text-[#00FFC8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  </button>
-                  <button className="p-2 hover:bg-[#2D3139] rounded-lg transition" title="More">
-                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              {filteredHistory.map((item) => (
+                <tr key={item.id} className="group hover:bg-[#0F1115]">
+                  <td className="font-mono text-[#6B7280]">{item.date}</td>
+                  <td>
+                    <div>
+                      <p className="text-[14px] font-medium text-white group-hover:text-[#00FFC8] transition">{item.clientName}</p>
+                      <p className="text-[12px] text-[#6B7280]">{item.email}</p>
+                    </div>
+                  </td>
+                  <td className="text-[#9CA3AF]">{item.caseType}</td>
+                  <td>{getStatusBadge(item.status)}</td>
+                  <td>{getPriorityBadge(item.priority)}</td>
+                  <td className="text-right">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
+                      <button className="p-2 hover:bg-[#2D3139] rounded-lg transition" title="View Details">
+                        <svg className="w-4 h-4 text-[#6B7280] hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </button>
+                      <button className="p-2 hover:bg-[#2D3139] rounded-lg transition" title="Call">
+                        <svg className="w-4 h-4 text-[#6B7280] hover:text-[#00FFC8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                        </svg>
+                      </button>
+                      <button className="p-2 hover:bg-[#2D3139] rounded-lg transition" title="More">
+                        <svg className="w-4 h-4 text-[#6B7280]" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     );
@@ -189,47 +186,57 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
   // Dashboard compact view
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-end mb-4">
-        <h2 className="text-lg font-bold text-white tracking-wide">Recent Case History</h2>
-        <button className="text-[#00FFC8] hover:text-white transition-colors">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="text-[17px] font-bold text-white tracking-wide">Recent Cases</h2>
+          <p className="text-[12px] text-[#6B7280] font-medium mt-0.5 uppercase tracking-wider">Case History</p>
+        </div>
+        <button className="p-2 hover:bg-[#2D3139] rounded-lg transition text-[#6B7280] hover:text-[#00FFC8]">
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
           </svg>
         </button>
       </div>
 
-      <div className="glass-panel rounded-2xl p-1 flex-1 overflow-hidden flex flex-col relative">
+      <div className="glass-panel rounded-2xl flex-1 overflow-hidden flex flex-col relative">
         {/* Decorative Top Line */}
-        <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-[#00FFC8] to-transparent opacity-50 mb-1"></div>
+        <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[#00FFC8]/50 to-transparent"></div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {/* Live Client Row (if active) */}
           {currentClient && currentClient.name && (
-            <div className="bg-[#00FFC8]/10 border border-[#00FFC8] rounded-lg p-3 flex items-center justify-between animate-pulse">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-[#00FFC8] shadow-[0_0_10px_#00FFC8]"></div>
-                <span className="text-sm font-bold text-white uppercase">Active</span>
+            <div className="bg-[#00FFC8]/10 border border-[#00FFC8]/50 rounded-lg p-3 flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-[#00FFC8] shadow-[0_0_8px_#00FFC8] animate-pulse"></div>
+                <span className="text-[11px] font-bold text-[#00FFC8] uppercase tracking-wider">Active</span>
               </div>
-              <span className="text-base font-medium text-white">{currentClient.name}</span>
-              <span className="text-sm text-[#00FFC8] font-mono">Now</span>
-              <button className="text-gray-400">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/>
-                </svg>
-              </button>
+              <div className="h-4 w-px bg-[#00FFC8]/30"></div>
+              <span className="text-[14px] font-medium text-white flex-1">{currentClient.name}</span>
+              <span className="text-[12px] text-[#00FFC8] font-mono">Now</span>
             </div>
           )}
 
           {mockHistory.slice(0, 5).map((item) => (
-            <div key={item.id} className="bg-[#16181D] hover:bg-[#1E2128] border border-transparent hover:border-[#2D3139] rounded-lg p-3 flex items-center justify-between group transition-all cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${item.status === 'booked' ? 'bg-[#00FFC8]' : item.status === 'follow-up' ? 'bg-yellow-500' : 'bg-gray-500'} opacity-50 group-hover:opacity-100 group-hover:shadow-[0_0_8px_rgba(0,255,200,0.5)] transition-all`}></div>
-                <span className="text-sm font-medium text-gray-400 group-hover:text-white uppercase tracking-wider w-20">{item.status}</span>
+            <div
+              key={item.id}
+              className="bg-[#16181D] hover:bg-[#1E2128] border border-transparent hover:border-[#2D3139] rounded-lg p-3 flex items-center gap-4 group transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-2 w-20">
+                <div className={`w-2 h-2 rounded-full transition-all ${
+                  item.status === 'booked'
+                    ? 'bg-[#10B981] group-hover:shadow-[0_0_6px_#10B981]'
+                    : item.status === 'follow-up'
+                    ? 'bg-[#F59E0B] group-hover:shadow-[0_0_6px_#F59E0B]'
+                    : 'bg-[#6B7280]'
+                }`}></div>
+                <span className="text-[11px] font-medium text-[#6B7280] group-hover:text-[#9CA3AF] uppercase tracking-wider truncate">
+                  {item.status === 'follow-up' ? 'Follow' : item.status}
+                </span>
               </div>
-              <div className="h-4 w-[1px] bg-[#2D3139]"></div>
-              <span className="text-base text-gray-300 group-hover:text-white flex-1 pl-4">{item.clientName}</span>
-              <span className="text-sm text-gray-500 font-mono">{item.date}</span>
-              <button className="text-gray-600 group-hover:text-white ml-2">
+              <div className="h-4 w-px bg-[#2D3139]"></div>
+              <span className="text-[14px] text-[#9CA3AF] group-hover:text-white flex-1 truncate transition">{item.clientName}</span>
+              <span className="text-[12px] text-[#6B7280] font-mono">{item.date}</span>
+              <button className="text-[#6B7280] group-hover:text-white opacity-0 group-hover:opacity-100 transition p-1 hover:bg-[#2D3139] rounded">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/>
                 </svg>
@@ -238,12 +245,11 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
           ))}
         </div>
 
-        {/* Decorative Corner */}
-        <div className="absolute bottom-0 right-0 w-8 h-8 pointer-events-none">
-          <svg viewBox="0 0 40 40" fill="none">
-            <path d="M40 40H20C20 28.9543 28.9543 20 40 20V40Z" fill="#1E2128"/>
-            <path d="M35 35L40 40" stroke="#00FFC8" strokeWidth="2"/>
-          </svg>
+        {/* View All Link */}
+        <div className="p-3 border-t border-[#2D3139]">
+          <button className="w-full text-center text-[13px] text-[#6B7280] hover:text-[#00FFC8] transition font-medium">
+            View All Cases
+          </button>
         </div>
       </div>
     </div>
