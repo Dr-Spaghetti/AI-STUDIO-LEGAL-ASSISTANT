@@ -59,7 +59,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
               </div>
               <div>
                   <p className="text-sm text-white font-medium">Ted Law Admin</p>
-                  <p className="text-xs text-gray-500">View Profile</p>
+                  <button
+                    onClick={() => setActiveTab('settings')}
+                    className="text-xs text-gray-500 hover:text-[#00FFC8] transition-colors"
+                  >
+                    View Profile
+                  </button>
               </div>
           </div>
       </div>
