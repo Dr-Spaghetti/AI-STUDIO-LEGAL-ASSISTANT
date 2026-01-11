@@ -32,16 +32,5 @@
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     }
-  ],
-  "env": {
-    "TWILIO_ACCOUNT_SID": "@twilio-account-sid",
-    "TWILIO_AUTH_TOKEN": "@twilio-auth-token",
-    "TWILIO_PHONE_NUMBER": "@twilio-phone-number",
-    "CALENDLY_CLIENT_ID": "@calendly-client-id",
-    "CALENDLY_CLIENT_SECRET": "@calendly-client-secret",
-    "CALENDLY_WEBHOOK_SECRET": "@calendly-webhook-secret",
-    "CLIO_CLIENT_ID": "@clio-client-id",
-    "CLIO_CLIENT_SECRET": "@clio-client-secret",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key"
-  }
+  ]
 }
