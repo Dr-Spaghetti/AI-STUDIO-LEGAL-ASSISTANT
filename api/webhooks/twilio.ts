@@ -279,6 +279,28 @@ async function handleStatusCallback(data: TwilioStatusCallback, res: VercelRespo
 async function updateLeadConsent(leadId: string, tenantId: string, smsOptIn: boolean) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) return;
 
+  // First, fetch the current lead to get existing consent data
+  const leadResponse = await fetch(
+    `${SUPABASE_URL}/rest/v1/leads?id=eq.${leadId}&select=consent`,
+    {
+      headers: {
+        apikey: SUPABASE_SERVICE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
+      },
+    }
+  );
+
+  const leads = await leadResponse.json();
+  const existingConsent = leads[0]?.consent || {};
+
+  // Update consent with new values
+  const updatedConsent = {
+    ...existingConsent,
+    sms_opt_in: smsOptIn,
+    sms_opt_in_at: smsOptIn ? new Date().toISOString() : existingConsent.sms_opt_in_at,
+    sms_opt_out_at: smsOptIn ? existingConsent.sms_opt_out_at : new Date().toISOString(),
+  };
+
   await fetch(`${SUPABASE_URL}/rest/v1/leads?id=eq.${leadId}`, {
     method: 'PATCH',
     headers: {
@@ -288,9 +310,7 @@ async function updateLeadConsent(leadId: string, tenantId: string, smsOptIn: boo
       Prefer: 'return=minimal',
     },
     body: JSON.stringify({
-      'consent.sms_opt_in': smsOptIn,
-      'consent.sms_opt_in_at': smsOptIn ? new Date().toISOString() : null,
-      'consent.sms_opt_out_at': smsOptIn ? null : new Date().toISOString(),
+      consent: updatedConsent,
       updated_at: new Date().toISOString(),
     }),
   });

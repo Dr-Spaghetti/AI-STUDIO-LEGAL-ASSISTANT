@@ -153,6 +153,15 @@ export function LeadList({ onSelectLead }: Props) {
     setSelectedLeads(newSelected);
   };
 
+  // CSV escape helper - handles commas, quotes, and newlines
+  const escapeCsvField = (field: unknown): string => {
+    const str = String(field ?? '');
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   // Export handler
   const handleExport = () => {
     const csv = [
@@ -169,15 +178,16 @@ export function LeadList({ onSelectLead }: Props) {
         new Date(l.created_at).toLocaleDateString(),
       ]),
     ]
-      .map((row) => row.join(','))
+      .map((row) => row.map(escapeCsvField).join(','))
       .join('\n');
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+    URL.revokeObjectURL(url);
   };
 
   const tierColors = {

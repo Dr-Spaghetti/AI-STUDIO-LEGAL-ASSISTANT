@@ -54,7 +54,7 @@ interface DailyMetric {
   conversions: number;
 }
 
-interface TimeRange = '7d' | '30d' | '90d' | 'all';
+type TimeRange = '7d' | '30d' | '90d' | 'all';
 
 // ============================================
 // MOCK DATA
