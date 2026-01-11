@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
 interface ComplianceState {
   hipaaEnabled: boolean;
@@ -20,6 +20,80 @@ const CompliancePanel: React.FC = () => {
   const [defaultDisclosure, setDefaultDisclosure] = useState(
     "This call may be recorded for quality assurance and training purposes. By continuing, you consent to the recording of this call."
   );
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Toast component
+  const Toast = ({ message, type }: { message: string; type: 'success' | 'error' }) => {
+    React.useEffect(() => {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }, []);
+    return (
+      <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-lg shadow-lg ${
+        type === 'success' ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'
+      }`}>
+        {type === 'success' ? (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        ) : (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        )}
+        <span className="font-medium">{message}</span>
+      </div>
+    );
+  };
+
+  // Export audit log
+  const handleExportAuditLog = useCallback(() => {
+    // Generate mock audit log data
+    const auditLog = [
+      { timestamp: new Date().toISOString(), event: 'HIPAA Mode toggled', user: 'Admin', details: 'Status changed' },
+      { timestamp: new Date(Date.now() - 3600000).toISOString(), event: 'Audit logging enabled', user: 'Admin', details: 'Compliance setting updated' },
+      { timestamp: new Date(Date.now() - 7200000).toISOString(), event: 'Disclosure text updated', user: 'Admin', details: 'Default disclosure modified' },
+      { timestamp: new Date(Date.now() - 10800000).toISOString(), event: 'User login', user: 'Admin', details: 'Successful authentication' },
+      { timestamp: new Date(Date.now() - 14400000).toISOString(), event: 'Settings exported', user: 'Admin', details: 'Full configuration backup' },
+      { timestamp: new Date(Date.now() - 18000000).toISOString(), event: 'Legal disclaimer enabled', user: 'Admin', details: 'Compliance setting updated' },
+    ];
+
+    const headers = ['Timestamp', 'Event', 'User', 'Details'];
+    const rows = auditLog.map(log => [
+      log.timestamp,
+      log.event,
+      log.user,
+      log.details
+    ].join(','));
+
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setToast({ message: 'Audit log exported successfully', type: 'success' });
+  }, []);
+
+  // Save disclosure
+  const handleSaveDisclosure = useCallback(() => {
+    if (!defaultDisclosure.trim()) {
+      setToast({ message: 'Disclosure text cannot be empty', type: 'error' });
+      return;
+    }
+    setIsSaving(true);
+    // Simulate save
+    setTimeout(() => {
+      setIsSaving(false);
+      setToast({ message: 'Disclosure saved successfully', type: 'success' });
+    }, 300);
+  }, [defaultDisclosure]);
 
   const toggleHipaa = () => {
     setComplianceState(prev => ({ ...prev, hipaaEnabled: !prev.hipaaEnabled }));
@@ -162,7 +236,10 @@ const CompliancePanel: React.FC = () => {
           statusText={complianceState.auditLoggingEnabled ? `${complianceState.auditEventCount} events logged` : 'Disabled'}
         >
           {complianceState.auditLoggingEnabled && (
-            <button className="mt-4 px-4 py-2.5 bg-[#0F1115] border border-[#2D3139] rounded-lg text-[14px] text-white font-medium hover:border-[#00FFC8]/50 transition flex items-center gap-2">
+            <button
+              onClick={handleExportAuditLog}
+              className="mt-4 px-4 py-2.5 bg-[#0F1115] border border-[#2D3139] rounded-lg text-[14px] text-white font-medium hover:border-[#00FFC8]/50 transition flex items-center gap-2"
+            >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
@@ -251,11 +328,21 @@ const CompliancePanel: React.FC = () => {
           placeholder="Enter the default disclosure message..."
         />
         <div className="flex justify-end mt-4">
-          <button className="px-5 py-2.5 bg-[#00FFC8] text-black text-[14px] font-semibold rounded-lg hover:bg-[#00FFC8]/90 transition">
+          <button
+            onClick={handleSaveDisclosure}
+            disabled={isSaving}
+            className="px-5 py-2.5 bg-[#00FFC8] text-black text-[14px] font-semibold rounded-lg hover:bg-[#00FFC8]/90 transition disabled:opacity-50 flex items-center gap-2"
+          >
+            {isSaving && (
+              <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+            )}
             Save Disclosure
           </button>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && <Toast message={toast.message} type={toast.type} />}
     </div>
   );
 };

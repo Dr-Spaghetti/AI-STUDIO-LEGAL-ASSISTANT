@@ -557,7 +557,7 @@ const App: React.FC = () => {
                             <AnalyticsPanel />
                         </div>
                         <div className="flex-1">
-                            <CaseHistoryPanel currentClient={clientInfo} />
+                            <CaseHistoryPanel currentClient={clientInfo} onNavigate={setActiveTab} />
                         </div>
                     </div>
                 </div>

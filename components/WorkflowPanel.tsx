@@ -1,6 +1,60 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
+
+interface WorkflowState {
+  conflictChecks: boolean;
+  followUpQueue: boolean;
+  aiCallAnalysis: boolean;
+}
 
 const WorkflowPanel: React.FC = () => {
+  const [workflowState, setWorkflowState] = useState<WorkflowState>({
+    conflictChecks: false,
+    followUpQueue: true,
+    aiCallAnalysis: true,
+  });
+
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Toast component
+  const Toast = ({ message, type }: { message: string; type: 'success' | 'error' }) => {
+    React.useEffect(() => {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }, []);
+    return (
+      <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-lg shadow-lg ${
+        type === 'success' ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'
+      }`}>
+        {type === 'success' ? (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        ) : (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        )}
+        <span className="font-medium">{message}</span>
+      </div>
+    );
+  };
+
+  const toggleWorkflow = useCallback((key: keyof WorkflowState) => {
+    setWorkflowState(prev => {
+      const newValue = !prev[key];
+      const labels = {
+        conflictChecks: 'Conflict Checks',
+        followUpQueue: 'Follow-up Queue',
+        aiCallAnalysis: 'AI Call Analysis'
+      };
+      setToast({
+        message: `${labels[key]} ${newValue ? 'enabled' : 'disabled'}`,
+        type: 'success'
+      });
+      return { ...prev, [key]: newValue };
+    });
+  }, []);
+
   return (
     <div className="flex flex-col gap-6 w-full h-full overflow-y-auto pb-8">
       {/* Header */}
@@ -23,7 +77,11 @@ const WorkflowPanel: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-[18px] font-semibold text-white tracking-wide">CONFLICT CHECKS</h3>
-                <div className="toggle-switch"></div>
+                <div
+                  className={`toggle-switch ${workflowState.conflictChecks ? 'active' : ''}`}
+                  onClick={() => toggleWorkflow('conflictChecks')}
+                  style={{ cursor: 'pointer' }}
+                ></div>
               </div>
               <p className="text-[14px] text-[#6B7280] mb-6">Automated conflict of interest screening for new client intakes</p>
 
@@ -50,7 +108,11 @@ const WorkflowPanel: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-[18px] font-semibold text-white tracking-wide">FOLLOW-UP QUEUE</h3>
-                <div className="toggle-switch active"></div>
+                <div
+                  className={`toggle-switch ${workflowState.followUpQueue ? 'active' : ''}`}
+                  onClick={() => toggleWorkflow('followUpQueue')}
+                  style={{ cursor: 'pointer' }}
+                ></div>
               </div>
               <p className="text-[14px] text-[#6B7280] mb-6">Scheduled reminders and pending client follow-ups</p>
 
@@ -77,7 +139,11 @@ const WorkflowPanel: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-[18px] font-semibold text-white tracking-wide">AI CALL ANALYSIS</h3>
-                <div className="toggle-switch active"></div>
+                <div
+                  className={`toggle-switch ${workflowState.aiCallAnalysis ? 'active' : ''}`}
+                  onClick={() => toggleWorkflow('aiCallAnalysis')}
+                  style={{ cursor: 'pointer' }}
+                ></div>
               </div>
               <p className="text-[14px] text-[#6B7280] mb-6">Automated insights and sentiment analysis from call transcripts</p>
 
@@ -110,6 +176,9 @@ const WorkflowPanel: React.FC = () => {
           <p className="text-[13px] text-[#6B7280] mt-1">Calls Analyzed</p>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toast && <Toast message={toast.message} type={toast.type} />}
     </div>
   );
 };
