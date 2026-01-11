@@ -157,7 +157,8 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
           </div>
           <button
             onClick={handleExportCSV}
-            className="px-5 py-2.5 bg-[#00FFC8] text-black text-[14px] font-semibold rounded-lg hover:bg-[#00FFC8]/90 transition flex items-center gap-2"
+            className="px-5 py-2.5 text-black text-[14px] font-semibold rounded-lg transition flex items-center gap-2"
+            style={{ backgroundColor: 'var(--primary-accent, #00FFC8)' }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -179,9 +180,15 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
               className={`tab-button flex items-center gap-2 ${activeFilter === tab.id ? 'active' : ''}`}
             >
               {tab.label}
-              <span className={`px-2 py-0.5 rounded-full text-[12px] ${
-                activeFilter === tab.id ? 'bg-[#00FFC8]/20 text-[#00FFC8]' : 'bg-[#2D3139] text-[#6B7280]'
-              }`}>{tab.count}</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[12px] ${
+                  activeFilter === tab.id ? '' : 'bg-[#2D3139] text-[#6B7280]'
+                }`}
+                style={activeFilter === tab.id ? {
+                  backgroundColor: 'rgba(var(--primary-accent-rgb, 0, 255, 200), 0.2)',
+                  color: 'var(--primary-accent, #00FFC8)'
+                } : undefined}
+              >{tab.count}</span>
             </button>
           ))}
         </div>
@@ -202,11 +209,22 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
             <tbody className="overflow-y-auto">
               {/* Live Client Row (if active) */}
               {currentClient && currentClient.name && (
-                <tr className="bg-[#00FFC8]/10 border-l-2 border-l-[#00FFC8]">
-                  <td className="font-mono text-[#00FFC8]">Now</td>
+                <tr
+                  style={{
+                    backgroundColor: 'rgba(var(--primary-accent-rgb, 0, 255, 200), 0.1)',
+                    borderLeft: '2px solid var(--primary-accent, #00FFC8)'
+                  }}
+                >
+                  <td className="font-mono" style={{ color: 'var(--primary-accent, #00FFC8)' }}>Now</td>
                   <td>
                     <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-[#00FFC8] shadow-[0_0_8px_#00FFC8] animate-pulse"></div>
+                      <div
+                        className="w-2 h-2 rounded-full animate-pulse"
+                        style={{
+                          backgroundColor: 'var(--primary-accent, #00FFC8)',
+                          boxShadow: '0 0 8px var(--primary-accent, #00FFC8)'
+                        }}
+                      ></div>
                       <div>
                         <p className="text-[14px] font-medium text-white">{currentClient.name}</p>
                         <p className="text-[12px] text-[#6B7280]">{currentClient.email || 'Gathering info...'}</p>
@@ -214,7 +232,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
                     </div>
                   </td>
                   <td className="text-[#6B7280]">-</td>
-                  <td><span className="status-badge active"><div className="w-1.5 h-1.5 rounded-full bg-[#00FFC8] animate-pulse"></div>Active</span></td>
+                  <td><span className="status-badge active"><div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: 'var(--primary-accent, #00FFC8)' }}></div>Active</span></td>
                   <td>-</td>
                   <td className="text-right">
                     <button className="p-2 hover:bg-[#2D3139] rounded-lg transition">
@@ -231,7 +249,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
                   <td className="font-mono text-[#6B7280]">{item.date}</td>
                   <td>
                     <div>
-                      <p className="text-[14px] font-medium text-white group-hover:text-[#00FFC8] transition">{item.clientName}</p>
+                      <p className="text-[14px] font-medium text-white transition hover-accent">{item.clientName}</p>
                       <p className="text-[12px] text-[#6B7280]">{item.email}</p>
                     </div>
                   </td>
@@ -255,7 +273,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
                         className="p-2 hover:bg-[#2D3139] rounded-lg transition"
                         title="Call"
                       >
-                        <svg className="w-4 h-4 text-[#6B7280] hover:text-[#00FFC8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <svg className="w-4 h-4 text-[#6B7280] hover-accent-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                         </svg>
                       </button>
@@ -289,7 +307,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
         </div>
         <button
           onClick={handleRefresh}
-          className="p-2 hover:bg-[#2D3139] rounded-lg transition text-[#6B7280] hover:text-[#00FFC8]"
+          className="p-2 hover:bg-[#2D3139] rounded-lg transition text-[#6B7280] hover-accent"
           title="Refresh"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -300,19 +318,31 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
 
       <div className="glass-panel rounded-2xl flex-1 overflow-hidden flex flex-col relative">
         {/* Decorative Top Line */}
-        <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[#00FFC8]/50 to-transparent"></div>
+        <div className="h-[2px] w-full" style={{ background: 'linear-gradient(to right, transparent, rgba(var(--primary-accent-rgb, 0, 255, 200), 0.5), transparent)' }}></div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {/* Live Client Row (if active) */}
           {currentClient && currentClient.name && (
-            <div className="bg-[#00FFC8]/10 border border-[#00FFC8]/50 rounded-lg p-3 flex items-center gap-4">
+            <div
+              className="rounded-lg p-3 flex items-center gap-4"
+              style={{
+                backgroundColor: 'rgba(var(--primary-accent-rgb, 0, 255, 200), 0.1)',
+                border: '1px solid rgba(var(--primary-accent-rgb, 0, 255, 200), 0.5)'
+              }}
+            >
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-[#00FFC8] shadow-[0_0_8px_#00FFC8] animate-pulse"></div>
-                <span className="text-[11px] font-bold text-[#00FFC8] uppercase tracking-wider">Active</span>
+                <div
+                  className="w-2 h-2 rounded-full animate-pulse"
+                  style={{
+                    backgroundColor: 'var(--primary-accent, #00FFC8)',
+                    boxShadow: '0 0 8px var(--primary-accent, #00FFC8)'
+                  }}
+                ></div>
+                <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--primary-accent, #00FFC8)' }}>Active</span>
               </div>
-              <div className="h-4 w-px bg-[#00FFC8]/30"></div>
+              <div className="h-4 w-px" style={{ backgroundColor: 'rgba(var(--primary-accent-rgb, 0, 255, 200), 0.3)' }}></div>
               <span className="text-[14px] font-medium text-white flex-1">{currentClient.name}</span>
-              <span className="text-[12px] text-[#00FFC8] font-mono">Now</span>
+              <span className="text-[12px] font-mono" style={{ color: 'var(--primary-accent, #00FFC8)' }}>Now</span>
             </div>
           )}
 
@@ -350,7 +380,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
         <div className="p-3 border-t border-[#2D3139]">
           <button
             onClick={handleViewAllCases}
-            className="w-full text-center text-[13px] text-[#6B7280] hover:text-[#00FFC8] transition font-medium"
+            className="w-full text-center text-[13px] text-[#6B7280] hover-accent transition font-medium"
           >
             View All Cases →
           </button>
@@ -389,7 +419,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[12px] text-[#6B7280] uppercase">Email</label>
-                  <p className="text-[#00FFC8]">{selectedCase.email}</p>
+                  <p style={{ color: 'var(--primary-accent, #00FFC8)' }}>{selectedCase.email}</p>
                 </div>
                 <div>
                   <label className="text-[12px] text-[#6B7280] uppercase">Phone</label>
@@ -414,7 +444,8 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
             <div className="p-5 border-t border-[#2D3139] flex justify-end gap-3">
               <button
                 onClick={() => handleCall(selectedCase.phone, selectedCase.clientName)}
-                className="px-4 py-2 bg-[#00FFC8] text-black font-semibold rounded-lg hover:bg-[#00FFC8]/90 transition flex items-center gap-2"
+                className="px-4 py-2 text-black font-semibold rounded-lg transition flex items-center gap-2"
+                style={{ backgroundColor: 'var(--primary-accent, #00FFC8)' }}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />

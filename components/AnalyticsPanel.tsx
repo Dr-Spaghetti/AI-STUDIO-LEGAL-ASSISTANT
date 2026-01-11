@@ -241,18 +241,10 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
           {/* Line Chart */}
           <div className="h-16 w-full mt-2">
             <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 180 60">
-              {/* Gradient Definition */}
-              <defs>
-                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00FFC8" stopOpacity="0.3"/>
-                  <stop offset="100%" stopColor="#00FFC8" stopOpacity="0"/>
-                </linearGradient>
-              </defs>
-
-              {/* Area Fill */}
+              {/* Area Fill - uses inline style for dynamic color */}
               <path
                 d="M0,45 C20,40 40,50 60,35 C80,15 100,45 120,25 C140,10 160,30 180,15 V60 H0 Z"
-                fill="url(#chartGradient)"
+                style={{ fill: 'rgba(var(--primary-accent-rgb, 0, 255, 200), 0.15)' }}
                 stroke="none"
               />
 
@@ -260,17 +252,16 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
               <path
                 d="M0,45 C20,40 40,50 60,35 C80,15 100,45 120,25 C140,10 160,30 180,15"
                 fill="none"
-                stroke="#00FFC8"
+                style={{ stroke: 'var(--primary-accent, #00FFC8)' }}
                 strokeWidth="2.5"
                 strokeLinecap="round"
-                className="drop-shadow-[0_0_8px_rgba(0,255,200,0.5)]"
               />
 
               {/* Dots */}
-              <circle cx="0" cy="45" r="3" fill="#1A1D24" stroke="#00FFC8" strokeWidth="2" />
-              <circle cx="60" cy="35" r="3" fill="#1A1D24" stroke="#00FFC8" strokeWidth="2" />
-              <circle cx="120" cy="25" r="3" fill="#1A1D24" stroke="#00FFC8" strokeWidth="2" />
-              <circle cx="180" cy="15" r="4" fill="#00FFC8" className="drop-shadow-[0_0_6px_rgba(0,255,200,0.8)]" />
+              <circle cx="0" cy="45" r="3" fill="#1A1D24" style={{ stroke: 'var(--primary-accent, #00FFC8)' }} strokeWidth="2" />
+              <circle cx="60" cy="35" r="3" fill="#1A1D24" style={{ stroke: 'var(--primary-accent, #00FFC8)' }} strokeWidth="2" />
+              <circle cx="120" cy="25" r="3" fill="#1A1D24" style={{ stroke: 'var(--primary-accent, #00FFC8)' }} strokeWidth="2" />
+              <circle cx="180" cy="15" r="4" style={{ fill: 'var(--primary-accent, #00FFC8)' }} />
             </svg>
           </div>
         </div>
@@ -292,12 +283,11 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
                   cy="24"
                   r="18"
                   fill="none"
-                  stroke="#00FFC8"
+                  style={{ stroke: 'var(--primary-accent, #00FFC8)' }}
                   strokeWidth="4"
                   strokeDasharray="113"
                   strokeDashoffset="85"
                   strokeLinecap="round"
-                  className="drop-shadow-[0_0_4px_rgba(0,255,200,0.5)]"
                 />
               </svg>
             </div>

@@ -172,7 +172,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
   }, [settings.employees, handleSettingsChange]);
 
   const renderIcon = (icon: string, isActive: boolean) => {
-    const cls = `w-5 h-5 ${isActive ? 'text-[#00FFC8]' : 'text-[#6B7280]'}`;
+    const cls = `w-5 h-5 ${isActive ? 'icon-active' : 'text-[#6B7280]'}`;
     switch (icon) {
       case 'palette':
         return <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" /></svg>;
@@ -267,7 +267,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                   onDrop={handleDrop}
                   className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
                     isDragging
-                      ? 'border-[#00FFC8] bg-[#00FFC8]/10'
+                      ? 'drag-active'
                       : 'border-[#2D3139] hover:border-[#3D4149]'
                   }`}
                 >
@@ -285,7 +285,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                     <div>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-4 py-2 bg-[#00FFC8] text-black font-semibold rounded-lg hover:bg-[#00FFC8]/90 transition"
+                        className="px-4 py-2 btn-primary text-black font-semibold rounded-lg transition"
                       >
                         Select File
                       </button>
@@ -394,7 +394,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               </div>
               <button
                 onClick={handleAddEmployee}
-                className="px-4 py-2 bg-[#00FFC8] text-black font-semibold text-[14px] rounded-lg hover:bg-[#00FFC8]/90 transition flex items-center gap-2"
+                className="px-4 py-2 btn-primary text-black font-semibold text-[14px] rounded-lg transition flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -420,7 +420,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                     className="flex items-center justify-between p-4 bg-[#0F1115] rounded-lg border border-[#2D3139] hover:border-[#3D4149] transition"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-[#00FFC8]/20 flex items-center justify-center text-[#00FFC8] font-semibold">
+                      <div className="w-10 h-10 rounded-full avatar-circle flex items-center justify-center font-semibold">
                         {emp.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -910,7 +910,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 onClick={() => {
                   setToast({ message: 'Demo data generated successfully! Sample calls and cases have been added.', type: 'success' });
                 }}
-                className="px-5 py-2.5 bg-[#00FFC8] text-black font-semibold text-[14px] rounded-lg hover:bg-[#00FFC8]/90 transition"
+                className="px-5 py-2.5 btn-primary text-black font-semibold text-[14px] rounded-lg transition"
               >
                 Generate Demo Data
               </button>
@@ -1093,8 +1093,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               </p>
             </div>
             {isSaving && (
-              <div className="flex items-center gap-2 text-[#00FFC8]">
-                <div className="w-4 h-4 border-2 border-[#00FFC8]/30 border-t-[#00FFC8] rounded-full animate-spin"></div>
+              <div className="flex items-center gap-2 saving-indicator">
+                <div className="w-4 h-4 border-2 rounded-full animate-spin spinner-primary"></div>
                 <span className="text-sm">Saving...</span>
               </div>
             )}
@@ -1213,7 +1213,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                   id="isActive"
                   checked={editingEmployee.isActive}
                   onChange={(e) => setEditingEmployee({ ...editingEmployee, isActive: e.target.checked })}
-                  className="w-4 h-4 rounded border-[#2D3139] bg-[#0F1115] text-[#00FFC8] focus:ring-[#00FFC8]"
+                  className="w-4 h-4 rounded border-[#2D3139] bg-[#0F1115] checkbox-primary"
                 />
                 <label htmlFor="isActive" className="text-white cursor-pointer">Active (available for routing)</label>
               </div>
@@ -1227,7 +1227,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               </button>
               <button
                 onClick={handleSaveEmployee}
-                className="px-5 py-2 bg-[#00FFC8] text-black font-semibold rounded-lg hover:bg-[#00FFC8]/90 transition"
+                className="px-5 py-2 btn-primary text-black font-semibold rounded-lg transition"
               >
                 Save
               </button>

@@ -84,6 +84,76 @@ const ThemeProvider: React.FC<ThemeProviderProps> = ({ settings, children }) => 
         box-shadow: 0 0 0 3px ${primaryColor}1a !important;
       }
 
+      /* Hover accent utilities */
+      .hover-accent:hover {
+        color: ${primaryColor} !important;
+      }
+      .hover-accent-svg:hover {
+        color: ${primaryColor} !important;
+      }
+      .group:hover .hover-accent {
+        color: ${primaryColor} !important;
+      }
+
+      /* Checkbox peer-checked states */
+      .peer:checked ~ .checkbox-indicator {
+        border-color: ${primaryColor} !important;
+        background-color: ${primaryColor}33 !important;
+      }
+
+      /* Button primary */
+      .btn-primary {
+        background-color: ${primaryColor} !important;
+      }
+      .btn-primary:hover {
+        background-color: ${primaryColor}e6 !important;
+      }
+
+      /* Icon active state */
+      .icon-active {
+        color: ${primaryColor} !important;
+      }
+
+      /* Drag active state */
+      .drag-active {
+        border-color: ${primaryColor} !important;
+        background-color: ${primaryColor}1a !important;
+      }
+
+      /* Avatar circle */
+      .avatar-circle {
+        background-color: ${primaryColor}33 !important;
+        color: ${primaryColor} !important;
+      }
+
+      /* Saving indicator */
+      .saving-indicator {
+        color: ${primaryColor} !important;
+      }
+      .spinner-primary {
+        border-color: ${primaryColor}4d !important;
+        border-top-color: ${primaryColor} !important;
+      }
+
+      /* Checkbox primary */
+      .checkbox-primary {
+        accent-color: ${primaryColor} !important;
+      }
+      .checkbox-primary:focus {
+        box-shadow: 0 0 0 3px ${primaryColor}33 !important;
+      }
+
+      /* Hover border accent */
+      .hover-border-accent:hover {
+        border-color: ${primaryColor}80 !important;
+      }
+
+      /* Icon container primary */
+      .icon-container-primary {
+        background-color: ${primaryColor}1a !important;
+        border: 1px solid ${primaryColor}4d !important;
+      }
+
       /* Stat card gradient */
       .stat-card::before {
         background: radial-gradient(circle, ${primaryColor}14 0%, transparent 70%) !important;
