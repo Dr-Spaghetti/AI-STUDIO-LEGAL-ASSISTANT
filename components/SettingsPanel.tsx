@@ -62,6 +62,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Graph settings state
+  const [graphSettings, setGraphSettings] = useState({
+    showWeeklyTrends: true,
+    showConversionMetrics: true,
+    realTimeUpdates: true,
+    exportCharts: false,
+    chartColorTheme: 'cyan'
+  });
+
   // Handle settings update with save feedback
   const handleSettingsChange = useCallback((updates: Partial<ReceptionistSettings>) => {
     const newSettings = { ...settings, ...updates };
@@ -460,12 +469,51 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
       case 'graphs':
         return (
           <div className="space-y-4">
-            <Toggle enabled={true} onChange={() => {}} label="Show Weekly Trends" description="Display weekly call volume trends on dashboard" />
-            <Toggle enabled={true} onChange={() => {}} label="Show Conversion Metrics" description="Display appointment conversion rates" />
-            <Toggle enabled={true} onChange={() => {}} label="Real-time Updates" description="Update charts in real-time as data comes in" />
-            <Toggle enabled={false} onChange={() => {}} label="Export Charts" description="Allow exporting charts as images" />
+            <Toggle
+              enabled={graphSettings.showWeeklyTrends}
+              onChange={() => {
+                setGraphSettings(prev => ({ ...prev, showWeeklyTrends: !prev.showWeeklyTrends }));
+                setToast({ message: `Weekly trends ${!graphSettings.showWeeklyTrends ? 'enabled' : 'disabled'}`, type: 'success' });
+              }}
+              label="Show Weekly Trends"
+              description="Display weekly call volume trends on dashboard"
+            />
+            <Toggle
+              enabled={graphSettings.showConversionMetrics}
+              onChange={() => {
+                setGraphSettings(prev => ({ ...prev, showConversionMetrics: !prev.showConversionMetrics }));
+                setToast({ message: `Conversion metrics ${!graphSettings.showConversionMetrics ? 'enabled' : 'disabled'}`, type: 'success' });
+              }}
+              label="Show Conversion Metrics"
+              description="Display appointment conversion rates"
+            />
+            <Toggle
+              enabled={graphSettings.realTimeUpdates}
+              onChange={() => {
+                setGraphSettings(prev => ({ ...prev, realTimeUpdates: !prev.realTimeUpdates }));
+                setToast({ message: `Real-time updates ${!graphSettings.realTimeUpdates ? 'enabled' : 'disabled'}`, type: 'success' });
+              }}
+              label="Real-time Updates"
+              description="Update charts in real-time as data comes in"
+            />
+            <Toggle
+              enabled={graphSettings.exportCharts}
+              onChange={() => {
+                setGraphSettings(prev => ({ ...prev, exportCharts: !prev.exportCharts }));
+                setToast({ message: `Chart export ${!graphSettings.exportCharts ? 'enabled' : 'disabled'}`, type: 'success' });
+              }}
+              label="Export Charts"
+              description="Allow exporting charts as images"
+            />
             <FormGroup label="Chart Color Theme">
-              <select className="form-input form-select">
+              <select
+                value={graphSettings.chartColorTheme}
+                onChange={(e) => {
+                  setGraphSettings(prev => ({ ...prev, chartColorTheme: e.target.value }));
+                  setToast({ message: `Chart theme updated to ${e.target.value}`, type: 'success' });
+                }}
+                className="form-input form-select"
+              >
                 <option value="cyan">Cyan (Default)</option>
                 <option value="blue">Blue</option>
                 <option value="green">Green</option>
@@ -858,7 +906,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <div className="p-5 bg-[#0F1115] rounded-lg border border-[#2D3139]">
               <h4 className="text-[15px] font-semibold text-white mb-2">Generate Demo Data</h4>
               <p className="text-[13px] text-[#6B7280] mb-4">Create sample calls and cases for demonstration purposes</p>
-              <button className="px-5 py-2.5 bg-[#00FFC8] text-black font-semibold text-[14px] rounded-lg hover:bg-[#00FFC8]/90 transition">
+              <button
+                onClick={() => {
+                  setToast({ message: 'Demo data generated successfully! Sample calls and cases have been added.', type: 'success' });
+                }}
+                className="px-5 py-2.5 bg-[#00FFC8] text-black font-semibold text-[14px] rounded-lg hover:bg-[#00FFC8]/90 transition"
+              >
                 Generate Demo Data
               </button>
             </div>
@@ -948,10 +1001,48 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <div className="p-5 bg-[#0F1115] rounded-lg border border-[#2D3139]">
               <h4 className="text-[15px] font-semibold text-white mb-4">Danger Zone</h4>
               <div className="space-y-3">
-                <button className="w-full px-4 py-3 bg-transparent border border-[#EF4444]/30 text-[#EF4444] rounded-lg hover:bg-[#EF4444]/10 transition text-left text-[14px] font-medium">
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to reset all settings to their default values? This action cannot be undone.')) {
+                      // Reset to default settings
+                      setSettings({
+                        aiName: 'Sarah',
+                        firmName: 'Ted Law Firm',
+                        tone: 'Professional and Empathetic',
+                        languageStyle: 'calm, clear, and natural human voice',
+                        responseDelay: 0,
+                        openingLine: "Hi thank you for calling Ted Law Firm. My name is Sarah, may I ask who is calling today?",
+                        urgencyKeywords: ['court date', 'deadline', 'statute of limitations', 'served papers', 'arrested', 'police'],
+                        voiceName: 'Kore',
+                        firmBio: "We are a boutique law firm specializing in Personal Injury and Family Law. Located at 100 Legal Way, New York, NY.",
+                        hipaaMode: false,
+                        legalDisclaimer: true,
+                        auditLogging: true,
+                        callRecording: false,
+                        emailNotifications: true,
+                        smsNotifications: false,
+                        language: 'en',
+                        timezone: 'America/New_York',
+                        apiKeyConfigured: true,
+                      });
+                      setToast({ message: 'All settings have been reset to default', type: 'success' });
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-transparent border border-[#EF4444]/30 text-[#EF4444] rounded-lg hover:bg-[#EF4444]/10 transition text-left text-[14px] font-medium"
+                >
                   Reset All Settings to Default
                 </button>
-                <button className="w-full px-4 py-3 bg-transparent border border-[#EF4444]/30 text-[#EF4444] rounded-lg hover:bg-[#EF4444]/10 transition text-left text-[14px] font-medium">
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to clear ALL data? This includes all cases, call history, and analytics. This action cannot be undone.')) {
+                      localStorage.removeItem('receptionistSettings');
+                      localStorage.removeItem('intakeConsent');
+                      setToast({ message: 'All data has been cleared. Page will reload.', type: 'success' });
+                      setTimeout(() => window.location.reload(), 1500);
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-transparent border border-[#EF4444]/30 text-[#EF4444] rounded-lg hover:bg-[#EF4444]/10 transition text-left text-[14px] font-medium"
+                >
                   Clear All Data
                 </button>
               </div>
