@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface AnalyticsPanelProps {
   fullPage?: boolean;
 }
 
 const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => {
+  const [showMenu, setShowMenu] = useState(false);
   // Mock analytics data
   const stats = {
     totalCalls: 36,
@@ -198,11 +199,38 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
         <div className="col-span-1 glass-panel p-4 rounded-2xl relative overflow-hidden group">
           <div className="flex justify-between items-start mb-4">
             <span className="text-[12px] font-bold text-[#6B7280] uppercase tracking-wider">Weekly Calls</span>
-            <button className="text-[#6B7280] hover:text-white transition">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/>
-              </svg>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="text-[#6B7280] hover:text-white transition"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/>
+                </svg>
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-6 bg-[#1A1D24] border border-[#2D3139] rounded-lg shadow-xl z-50 py-1 min-w-[140px]">
+                  <button
+                    onClick={() => { setShowMenu(false); }}
+                    className="w-full px-4 py-2 text-left text-sm text-white hover:bg-[#2D3139] transition"
+                  >
+                    Refresh Data
+                  </button>
+                  <button
+                    onClick={() => { setShowMenu(false); }}
+                    className="w-full px-4 py-2 text-left text-sm text-white hover:bg-[#2D3139] transition"
+                  >
+                    Export Chart
+                  </button>
+                  <button
+                    onClick={() => { setShowMenu(false); }}
+                    className="w-full px-4 py-2 text-left text-sm text-white hover:bg-[#2D3139] transition"
+                  >
+                    View Full Report
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-end gap-2 mb-2">
