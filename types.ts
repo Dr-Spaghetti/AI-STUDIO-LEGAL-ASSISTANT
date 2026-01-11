@@ -116,6 +116,9 @@ export interface ReceptionistSettings {
   adminEmail?: string;
   apiKeyConfigured?: boolean;
 
+  // Team & Employees
+  employees?: Employee[];
+
   // Legacy fields for backward compatibility
   recordCalls?: boolean;
   practiceAreas?: string;
@@ -225,4 +228,18 @@ export type SettingsCategory =
   | 'accessibility'
   | 'demo'
   | 'integrations'
-  | 'admin';
+  | 'admin'
+  | 'team';
+
+// Employee/Team Member
+export interface Employee {
+  id: string;
+  name: string;
+  role: string;
+  title?: string;
+  practiceArea?: string;
+  email?: string;
+  phone?: string;
+  routingTag?: string;
+  isActive: boolean;
+}
