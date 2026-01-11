@@ -181,6 +181,11 @@ export interface ClientInfo {
   caseDetails: string;
   appointment: string;
   requestedDocuments?: string[];
+  // Consent & Jurisdiction
+  jurisdiction?: string;
+  smsOptIn?: boolean;
+  emailOptIn?: boolean;
+  recordingConsent?: boolean;
 }
 
 export interface Transcription {
