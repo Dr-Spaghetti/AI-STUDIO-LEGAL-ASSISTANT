@@ -1,0 +1,48 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,POST,PUT,DELETE" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-Requested-With, Content-Type, Accept, Authorization" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    }
+  ],
+  "env": {
+    "GEMINI_API_KEY": "@gemini-api-key",
+    "TWILIO_ACCOUNT_SID": "@twilio-account-sid",
+    "TWILIO_AUTH_TOKEN": "@twilio-auth-token",
+    "TWILIO_PHONE_NUMBER": "@twilio-phone-number",
+    "CALENDLY_CLIENT_ID": "@calendly-client-id",
+    "CALENDLY_CLIENT_SECRET": "@calendly-client-secret",
+    "CALENDLY_WEBHOOK_SECRET": "@calendly-webhook-secret",
+    "CLIO_CLIENT_ID": "@clio-client-id",
+    "CLIO_CLIENT_SECRET": "@clio-client-secret",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key"
+  }
+}
