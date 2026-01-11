@@ -1,40 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  getAllAnalytics,
+  type AnalyticsStats,
+  type WeeklyData,
+  type ConversionFunnel,
+  type CaseTypeDistribution,
+} from '../lib/analytics';
 
 interface AnalyticsPanelProps {
   fullPage?: boolean;
+  tenantId?: string;
 }
 
-const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => {
+const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false, tenantId }) => {
   const [showMenu, setShowMenu] = useState(false);
-  // Mock analytics data
-  const stats = {
-    totalCalls: 36,
-    callsTrend: 15,
-    appointmentsBooked: 9,
-    conversionRate: 25.0,
-    avgDuration: '4:32',
-    avgDurationMinutes: 4.5,
-  };
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLiveData, setIsLiveData] = useState(false);
 
-  const weeklyData = [
-    { day: 'Mon', calls: 4 },
-    { day: 'Tue', calls: 7 },
-    { day: 'Wed', calls: 5 },
-    { day: 'Thu', calls: 8 },
-    { day: 'Fri', calls: 6 },
-    { day: 'Sat', calls: 3 },
-    { day: 'Sun', calls: 3 },
-  ];
+  // Analytics state
+  const [stats, setStats] = useState<AnalyticsStats>({
+    totalCalls: 0,
+    callsTrend: 0,
+    appointmentsBooked: 0,
+    conversionRate: 0,
+    avgDuration: '0:00',
+    avgDurationMinutes: 0,
+  });
 
-  const maxCalls = Math.max(...weeklyData.map(d => d.calls));
+  const [weeklyData, setWeeklyData] = useState<WeeklyData[]>([]);
+  const [funnelData, setFunnelData] = useState<ConversionFunnel[]>([]);
+  const [caseTypes, setCaseTypes] = useState<CaseTypeDistribution[]>([]);
+
+  // Fetch analytics data
+  useEffect(() => {
+    async function fetchAnalytics() {
+      setIsLoading(true);
+      try {
+        const data = await getAllAnalytics(tenantId);
+        setStats(data.stats);
+        setWeeklyData(data.weeklyData);
+        setFunnelData(data.funnel);
+        setCaseTypes(data.caseTypes);
+        setIsLiveData(data.isLive);
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchAnalytics();
+  }, [tenantId]);
+
+  const maxCalls = Math.max(...weeklyData.map(d => d.calls), 1);
 
   if (fullPage) {
     return (
       <div className="flex flex-col gap-6 w-full h-full overflow-y-auto pb-8">
         {/* Header */}
-        <div>
-          <h1 className="text-[28px] font-bold text-white mb-2">Analytics & Performance</h1>
-          <p className="text-[15px] text-[#9CA3AF]">Real-time metrics and performance analytics</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[28px] font-bold text-white mb-2">Analytics & Performance</h1>
+            <p className="text-[15px] text-[#9CA3AF]">
+              {isLiveData ? 'Live data from database' : 'Demo data (database not connected)'}
+            </p>
+          </div>
+          {isLoading && (
+            <div className="flex items-center gap-2 text-[#6B7280]">
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Loading...
+            </div>
+          )}
         </div>
 
         {/* Stats Cards with Gradients */}
@@ -129,12 +168,7 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
           <div className="workflow-card">
             <h3 className="text-[17px] font-semibold text-white mb-6">Conversion Funnel</h3>
             <div className="space-y-5">
-              {[
-                { label: 'Total Calls', value: 36, percent: 100 },
-                { label: 'Qualified Leads', value: 24, percent: 67 },
-                { label: 'Consultations Set', value: 15, percent: 42 },
-                { label: 'Appointments Booked', value: 9, percent: 25 },
-              ].map((item, index) => (
+              {funnelData.map((item, index) => (
                 <div key={index}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[14px] text-[#9CA3AF]">{item.label}</span>
@@ -158,12 +192,7 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
         <div className="workflow-card">
           <h3 className="text-[17px] font-semibold text-white mb-6">Call Distribution by Case Type</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { type: 'Personal Injury', count: 14, color: 'var(--primary-accent, #00FFC8)' },
-              { type: 'Family Law', count: 9, color: '#3B82F6' },
-              { type: 'Criminal Defense', count: 7, color: '#EF4444' },
-              { type: 'Other', count: 6, color: '#A78BFA' },
-            ].map((item, index) => (
+            {caseTypes.map((item, index) => (
               <div key={index} className="bg-[#0F1115] border border-[#2D3139] rounded-xl p-5 text-center">
                 <div
                   className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center"

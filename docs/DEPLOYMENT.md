@@ -48,7 +48,19 @@ VITE_ENABLE_VOICE=true
 VITE_ENABLE_EMERGENCY_DETECTION=true
 ```
 
-### 2.2 Optional Variables (Integrations)
+### 2.2 Monitoring & Error Tracking
+
+```bash
+# Sentry Error Tracking
+# Get DSN from: https://sentry.io/settings/projects/YOUR_PROJECT/keys/
+VITE_SENTRY_DSN=https://your-key@o0.ingest.sentry.io/your-project-id
+SENTRY_DSN=https://your-key@o0.ingest.sentry.io/your-project-id
+
+# App Version (for Sentry releases)
+VITE_APP_VERSION=1.0.0
+```
+
+### 2.3 Optional Variables (Integrations)
 
 ```bash
 # Twilio SMS

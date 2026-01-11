@@ -17,6 +17,10 @@ import { FullPageLoader } from './components/LoadingIndicator';
 import ConsentModal, { ConsentData } from './components/ConsentModal';
 import AIDisclaimerBanner from './components/AIDisclaimerBanner';
 import ThemeProvider from './components/ThemeProvider';
+import { initSentry, captureException, setUser } from './lib/sentry';
+
+// Initialize Sentry for error tracking
+initSentry();
 
 import {
   CallState,

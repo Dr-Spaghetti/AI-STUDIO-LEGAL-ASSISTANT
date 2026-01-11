@@ -1,27 +1,44 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ClientInfo } from '../types';
+import { getCases, getCaseCounts, type CaseHistoryItem, isDatabaseConnected } from '../lib/cases';
 
 interface CaseHistoryPanelProps {
     currentClient?: Partial<ClientInfo>;
     fullPage?: boolean;
     onNavigate?: (tab: string) => void;
+    tenantId?: string;
 }
 
-interface CaseHistoryItem {
-  id: string;
-  date: string;
-  clientName: string;
-  email: string;
-  phone: string;
-  status: 'booked' | 'follow-up' | 'pending' | 'closed';
-  priority: 'high' | 'medium' | 'low';
-  caseType: string;
-}
-
-const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, fullPage = false, onNavigate }) => {
+const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, fullPage = false, onNavigate, tenantId }) => {
   const [activeFilter, setActiveFilter] = useState<'all' | 'booked' | 'follow-up'>('all');
   const [selectedCase, setSelectedCase] = useState<CaseHistoryItem | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [cases, setCases] = useState<CaseHistoryItem[]>([]);
+  const [counts, setCounts] = useState({ all: 0, booked: 0, followUp: 0, pending: 0, inProgress: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLiveData, setIsLiveData] = useState(false);
+
+  // Fetch cases data
+  useEffect(() => {
+    async function fetchCases() {
+      setIsLoading(true);
+      try {
+        const [casesData, countsData] = await Promise.all([
+          getCases(tenantId),
+          getCaseCounts(tenantId),
+        ]);
+        setCases(casesData);
+        setCounts(countsData);
+        setIsLiveData(isDatabaseConnected());
+      } catch (error) {
+        console.error('Error fetching cases:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchCases();
+  }, [tenantId]);
 
   // Toast component
   const Toast = ({ message, type }: { message: string; type: 'success' | 'error' }) => {
@@ -58,7 +75,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
     };
 
     const headers = ['Date', 'Client Name', 'Email', 'Phone', 'Status', 'Priority', 'Case Type'];
-    const rows = mockHistory.map(item => [
+    const rows = cases.map(item => [
       item.date,
       item.clientName,
       item.email,
@@ -79,7 +96,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     setToast({ message: 'CSV exported successfully', type: 'success' });
-  }, []);
+  }, [cases]);
 
   // Action handlers
   const handleViewDetails = useCallback((item: CaseHistoryItem) => {
@@ -91,9 +108,22 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
     setToast({ message: `Initiating call to ${name}...`, type: 'success' });
   }, []);
 
-  const handleRefresh = useCallback(() => {
-    setToast({ message: 'Data refreshed', type: 'success' });
-  }, []);
+  const handleRefresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [casesData, countsData] = await Promise.all([
+        getCases(tenantId),
+        getCaseCounts(tenantId),
+      ]);
+      setCases(casesData);
+      setCounts(countsData);
+      setToast({ message: isLiveData ? 'Data refreshed from database' : 'Data refreshed', type: 'success' });
+    } catch (error) {
+      setToast({ message: 'Failed to refresh data', type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [tenantId, isLiveData]);
 
   const handleViewAllCases = useCallback(() => {
     if (onNavigate) {
@@ -101,19 +131,8 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
     }
   }, [onNavigate]);
 
-  // Mock data for the list
-  const mockHistory: CaseHistoryItem[] = [
-    { id: '1', clientName: 'Sarah Jenkins', email: 'sarah.j@email.com', phone: '(555) 123-4567', date: '01/10/2024', status: 'booked', priority: 'high', caseType: 'Personal Injury' },
-    { id: '2', clientName: 'Michael Ross', email: 'mross@email.com', phone: '(555) 234-5678', date: '01/10/2024', status: 'booked', priority: 'medium', caseType: 'Criminal Defense' },
-    { id: '3', clientName: 'David Kim', email: 'd.kim@email.com', phone: '(555) 345-6789', date: '01/09/2024', status: 'follow-up', priority: 'high', caseType: 'Family Law' },
-    { id: '4', clientName: 'Amanda Chen', email: 'achen@email.com', phone: '(555) 456-7890', date: '01/09/2024', status: 'follow-up', priority: 'low', caseType: 'Estate Planning' },
-    { id: '5', clientName: 'Robert Fox', email: 'rfox@email.com', phone: '(555) 567-8901', date: '01/08/2024', status: 'booked', priority: 'medium', caseType: 'Personal Injury' },
-    { id: '6', clientName: 'Emily Watson', email: 'ewatson@email.com', phone: '(555) 678-9012', date: '01/08/2024', status: 'pending', priority: 'low', caseType: 'Corporate' },
-    { id: '7', clientName: 'James Wilson', email: 'jwilson@email.com', phone: '(555) 789-0123', date: '01/07/2024', status: 'booked', priority: 'high', caseType: 'Criminal Defense' },
-    { id: '8', clientName: 'Lisa Brown', email: 'lbrown@email.com', phone: '(555) 890-1234', date: '01/07/2024', status: 'follow-up', priority: 'medium', caseType: 'Family Law' },
-  ];
-
-  const filteredHistory = mockHistory.filter(item => {
+  // Filter cases based on active filter
+  const filteredCases = cases.filter(item => {
     if (activeFilter === 'all') return true;
     return item.status === activeFilter;
   });
@@ -170,9 +189,9 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
         {/* Filter Tabs */}
         <div className="flex gap-2">
           {[
-            { id: 'all', label: 'All Cases', count: mockHistory.length },
-            { id: 'booked', label: 'Booked', count: mockHistory.filter(i => i.status === 'booked').length },
-            { id: 'follow-up', label: 'Follow-Up', count: mockHistory.filter(i => i.status === 'follow-up').length },
+            { id: 'all', label: 'All Cases', count: counts.all },
+            { id: 'booked', label: 'Booked', count: counts.booked },
+            { id: 'follow-up', label: 'Follow-Up', count: counts.followUp },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -244,7 +263,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
                 </tr>
               )}
 
-              {filteredHistory.map((item) => (
+              {filteredCases.map((item) => (
                 <tr key={item.id} className="group hover:bg-[#0F1115]">
                   <td className="font-mono text-[#6B7280]">{item.date}</td>
                   <td>
@@ -346,7 +365,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
             </div>
           )}
 
-          {mockHistory.slice(0, 5).map((item) => (
+          {cases.slice(0, 5).map((item) => (
             <div
               key={item.id}
               onClick={() => handleViewDetails(item)}

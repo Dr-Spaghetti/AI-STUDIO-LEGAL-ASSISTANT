@@ -55,7 +55,57 @@
 **Setup:**
 Already enabled via Vercel project settings.
 
-### 2.2 Browser Console Monitoring
+### 2.2 Health Check Endpoint
+
+**Endpoint:** `GET /api/health`
+
+**Response Format:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-01-11T10:00:00.000Z",
+  "version": "abc1234",
+  "checks": {
+    "api": "ok",
+    "environment": "ok",
+    "dependencies": "ok"
+  },
+  "responseTimeMs": 15
+}
+```
+
+**Status Codes:**
+- `200` - Healthy or Degraded
+- `503` - Unhealthy
+
+**Uptime Monitoring Setup (UptimeRobot):**
+1. Create account at uptimerobot.com
+2. Add new HTTP(s) monitor
+3. URL: `https://your-domain.vercel.app/api/health`
+4. Monitoring interval: 5 minutes
+5. Alert contacts: Configure email/Slack/SMS
+
+### 2.3 Sentry Error Tracking
+
+**Setup:**
+1. Create project at sentry.io
+2. Add DSN to environment variables:
+   ```bash
+   VITE_SENTRY_DSN=https://key@o0.ingest.sentry.io/project-id
+   SENTRY_DSN=https://key@o0.ingest.sentry.io/project-id
+   ```
+3. Errors are automatically captured
+
+**Features:**
+- Automatic error capture
+- Breadcrumb trail for debugging
+- User context tracking
+- Performance transactions
+- Release tracking
+
+**Access:** sentry.io/organizations/YOUR_ORG/issues/
+
+### 2.4 Browser Console Monitoring
 
 **Key Errors to Watch:**
 ```javascript
@@ -70,7 +120,7 @@ console.warn
 "localStorage"
 ```
 
-### 2.3 Vercel Function Logs
+### 2.5 Vercel Function Logs
 
 **Access:** vercel.com/[project]/logs
 
