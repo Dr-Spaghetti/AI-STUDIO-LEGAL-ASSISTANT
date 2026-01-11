@@ -42,12 +42,12 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
           {/* Total Calls */}
           <div className="stat-card">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-11 h-11 rounded-xl bg-[#00FFC8]/15 border border-[#00FFC8]/30 flex items-center justify-center">
-                <svg className="w-5 h-5 text-[#00FFC8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'rgba(var(--primary-accent-rgb, 0, 255, 200), 0.15)', border: '1px solid rgba(var(--primary-accent-rgb, 0, 255, 200), 0.3)' }}>
+                <svg className="w-5 h-5" style={{ color: 'var(--primary-accent, #00FFC8)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                 </svg>
               </div>
-              <span className="text-[13px] font-bold text-[#00FFC8] flex items-center gap-1">
+              <span className="text-[13px] font-bold flex items-center gap-1" style={{ color: 'var(--primary-accent, #00FFC8)' }}>
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
                 </svg>
@@ -114,9 +114,9 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
                       style={{ height: `${(item.calls / maxCalls) * 100}%` }}
                     >
                       {/* Gradient bar */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#00FFC8] to-[#00FFC8]/40"></div>
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, var(--primary-accent, #00FFC8), rgba(var(--primary-accent-rgb, 0, 255, 200), 0.4))' }}></div>
                       {/* Glow effect */}
-                      <div className="absolute inset-0 bg-[#00FFC8] opacity-20 blur-sm"></div>
+                      <div className="absolute inset-0 opacity-20 blur-sm" style={{ backgroundColor: 'var(--primary-accent, #00FFC8)' }}></div>
                     </div>
                   </div>
                   <span className="text-[12px] text-[#6B7280] font-medium">{item.day}</span>
@@ -145,7 +145,7 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
                       className="h-full rounded-full transition-all duration-500 relative"
                       style={{ width: `${item.percent}%` }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#00FFC8] to-[#00FFC8]/60"></div>
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, var(--primary-accent, #00FFC8), rgba(var(--primary-accent-rgb, 0, 255, 200), 0.6))' }}></div>
                     </div>
                   </div>
                 </div>
@@ -159,7 +159,7 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
           <h3 className="text-[17px] font-semibold text-white mb-6">Call Distribution by Case Type</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { type: 'Personal Injury', count: 14, color: '#00FFC8' },
+              { type: 'Personal Injury', count: 14, color: 'var(--primary-accent, #00FFC8)' },
               { type: 'Family Law', count: 9, color: '#3B82F6' },
               { type: 'Criminal Defense', count: 7, color: '#EF4444' },
               { type: 'Other', count: 6, color: '#A78BFA' },
@@ -235,7 +235,7 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
 
           <div className="flex items-end gap-2 mb-2">
             <span className="text-[36px] font-bold text-white">{stats.totalCalls}</span>
-            <span className="text-[13px] font-bold text-[#00FFC8] mb-2">+{stats.callsTrend}%</span>
+            <span className="text-[13px] font-bold mb-2" style={{ color: 'var(--primary-accent, #00FFC8)' }}>+{stats.callsTrend}%</span>
           </div>
 
           {/* Line Chart */}
@@ -279,7 +279,7 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false }) => 
         <div className="col-span-1 flex flex-col gap-4">
           {/* Conversion Rate */}
           <div className="glass-panel p-4 rounded-2xl flex items-center justify-between relative overflow-hidden">
-            <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#00FFC8] to-transparent opacity-50 rounded-l"></div>
+            <div className="absolute right-0 top-0 bottom-0 w-1 opacity-50 rounded-l" style={{ background: 'linear-gradient(to bottom, var(--primary-accent, #00FFC8), transparent)' }}></div>
             <div>
               <span className="text-[12px] font-bold text-[#6B7280] uppercase tracking-wider block mb-1">Conversion Rate</span>
               <span className="text-[24px] font-bold text-white">{stats.conversionRate}%</span>

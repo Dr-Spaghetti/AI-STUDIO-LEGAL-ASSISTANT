@@ -16,6 +16,7 @@ import StatusBar from './components/StatusBar';
 import { FullPageLoader } from './components/LoadingIndicator';
 import ConsentModal, { ConsentData } from './components/ConsentModal';
 import AIDisclaimerBanner from './components/AIDisclaimerBanner';
+import ThemeProvider from './components/ThemeProvider';
 
 import {
   CallState,
@@ -495,11 +496,12 @@ const App: React.FC = () => {
   }, [cleanup]);
 
   return (
+    <ThemeProvider settings={settings}>
     <div className="flex flex-col h-screen w-full bg-[#050505] text-white overflow-hidden">
         {/* AI Disclaimer Banner - Always Visible */}
         <AIDisclaimerBanner
           firmName={settings.firmName}
-          primaryColor="#00FFC8"
+          primaryColor={settings.brandPrimaryColor || '#00FFC8'}
           variant="full"
           onLearnMore={() => setShowDisclaimerExpanded(true)}
         />
@@ -518,7 +520,7 @@ const App: React.FC = () => {
             <ConsentModal
               onAccept={handleConsentAccept}
               firmName={settings.firmName}
-              primaryColor="#00FFC8"
+              primaryColor={settings.brandPrimaryColor || '#00FFC8'}
             />
           )}
 
@@ -601,6 +603,7 @@ const App: React.FC = () => {
         </main>
         </div>
     </div>
+    </ThemeProvider>
   );
 };
 
