@@ -5,8 +5,25 @@ import {
   Modality,
   FunctionCall,
 } from '@google/genai';
-import CallControl from './components/CallControl';
-import { LoadingIndicator, FullPageLoader } from './components/LoadingIndicator';
+import Sidebar from './components/Sidebar';
+import LiveIntakePanel from './components/LiveIntakePanel';
+import AnalyticsPanel from './components/AnalyticsPanel';
+import CaseHistoryPanel from './components/CaseHistoryPanel';
+import CompliancePanel from './components/CompliancePanel';
+import WorkflowPanel from './components/WorkflowPanel';
+import SettingsPanel from './components/SettingsPanel';
+import StatusBar from './components/StatusBar';
+import { FullPageLoader } from './components/LoadingIndicator';
+import ConsentModal, { ConsentData } from './components/ConsentModal';
+import AIDisclaimerBanner from './components/AIDisclaimerBanner';
+import ThemeProvider from './components/ThemeProvider';
+import LoginPage from './components/LoginPage';
+import { initSentry, captureException, setUser } from './lib/sentry';
+import { getCurrentUser, logout, type User } from './lib/auth';
+
+// Initialize Sentry for error tracking
+initSentry();
+
 import {
   CallState,
   ClientInfo,
@@ -16,14 +33,7 @@ import {
   BrandingConfig,
   CRMExportStatus,
   CRMIntegrationsState,
-  ReceptionistSettings,
-  FunctionCallArgs,
-  UpdateClientInfoArgs,
-  UpdateCaseDetailsArgs,
-  RequestDocumentsArgs,
-  FlagCaseAsUrgentArgs,
-  BookAppointmentArgs,
-  SendFollowUpEmailArgs
+  ReceptionistSettings
 } from './types';
 import {
   getSystemInstruction,
@@ -91,11 +101,57 @@ const DEFAULT_SETTINGS: ReceptionistSettings = {
     openingLine: "Hi thank you for calling Ted Law Firm. My name is Sarah, may I ask who is calling today?",
     urgencyKeywords: ['court date', 'deadline', 'statute of limitations', 'served papers', 'arrested', 'police'],
     voiceName: 'Kore',
-    firmBio: "We are a boutique law firm specializing in Personal Injury and Family Law. Located at 100 Legal Way, New York, NY."
+    firmBio: "We are a boutique law firm specializing in Personal Injury and Family Law. Located at 100 Legal Way, New York, NY.",
+    // Extended defaults
+    hipaaMode: false,
+    legalDisclaimer: true,
+    auditLogging: true,
+    callRecording: false,
+    emailNotifications: true,
+    smsNotifications: false,
+    language: 'en',
+    timezone: 'America/New_York',
+    apiKeyConfigured: true,
 };
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('LIVE_INTAKE');
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [requireAuth, setRequireAuth] = useState(() => {
+    // Check if auth is required (can be configured per tenant)
+    const authRequired = localStorage.getItem('requireAuth');
+    return authRequired === 'true';
+  });
+
+  // Check for existing session on mount
+  useEffect(() => {
+    async function checkAuth() {
+      const user = await getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        // Set user context in Sentry
+        setUser({ id: user.id, email: user.email, tenantId: user.tenantId });
+      }
+      setAuthLoading(false);
+    }
+    checkAuth();
+  }, []);
+
+  // Handle login
+  const handleLogin = useCallback((user: User) => {
+    setCurrentUser(user);
+    setUser({ id: user.id, email: user.email, tenantId: user.tenantId });
+  }, []);
+
+  // Handle logout
+  const handleLogout = useCallback(async () => {
+    await logout();
+    setCurrentUser(null);
+    setUser(undefined);
+  }, []);
+
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [callState, setCallState] = useState<CallState>(CallState.IDLE);
   const [clientInfo, setClientInfo] = useState<Partial<ClientInfo>>({});
   const [transcriptionHistory, setTranscriptionHistory] = useState<Transcription[]>([]);
@@ -104,56 +160,38 @@ const App: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isUrgent, setIsUrgent] = useState(false);
   const [urgencyReason, setUrgencyReason] = useState('');
-  const [brandingConfig, setBrandingConfig] = useState<BrandingConfig>({
-    firmName: 'Ted Law Firm',
-    logoUrl: 'https://i.ibb.co/L6V2L1j/ted-law-logo-2.png',
-    primaryColor: '#00FFA3',
+
+  // Consent State
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [consentData, setConsentData] = useState<ConsentData | null>(() => {
+    try {
+      const saved = localStorage.getItem('intakeConsent');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Check if consent was given within the last 24 hours
+        const consentTime = new Date(parsed.disclaimerAcceptedAt).getTime();
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+        if (now - consentTime < twentyFourHours) {
+          return parsed;
+        }
+      }
+      return null;
+    } catch {
+      return null;
+    }
   });
-  const [crmExportStatus, setCrmExportStatus] = useState<CRMIntegrationsState>({
-    clio: CRMExportStatus.IDLE,
-    myCase: CRMExportStatus.IDLE,
-    lawmatics: CRMExportStatus.IDLE,
-  });
+  const [showDisclaimerExpanded, setShowDisclaimerExpanded] = useState(false);
 
   // Settings State
   const [settings, setSettings] = useState<ReceptionistSettings>(() => {
       try {
           const saved = localStorage.getItem('receptionistSettings');
-          return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+          return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
       } catch (e) {
           return DEFAULT_SETTINGS;
       }
   });
-
-  // Persisted State
-  const [lawyerReport, setLawyerReport] = useState<LawyerReport | null>(() => {
-    try {
-        const saved = localStorage.getItem('lawyerReport');
-        return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-        return null;
-    }
-  });
-  
-  const [followUpActions, setFollowUpActions] = useState<string>(() => {
-      return localStorage.getItem('followUpActions') || '';
-  });
-
-  const [completedActions, setCompletedActions] = useState<Record<number, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem('completedActions');
-      return saved ? JSON.parse(saved) : {};
-    } catch (e) {
-      return {};
-    }
-  });
-
-  // Recording State
-  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
-
-  // CRM Modal State
-  const [showCrmModal, setShowCrmModal] = useState(false);
-  const [pendingCrm, setPendingCrm] = useState<keyof CRMIntegrationsState | null>(null);
 
   // Refs
   const liveSessionRef = useRef<LiveSessionPromise | null>(null);
@@ -163,44 +201,22 @@ const App: React.FC = () => {
   const audioWorkletNodeRef = useRef<AudioWorkletNode | null>(null);
   const nextAudioStartTimeRef = useRef(0);
   const audioSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
-  const transcriptionContainerRef = useRef<HTMLDivElement>(null);
-  
+
   // Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const mixedAudioDestinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
 
-  // Persistence Effects
-  useEffect(() => {
-    if (lawyerReport) {
-        localStorage.setItem('lawyerReport', JSON.stringify(lawyerReport));
-    } else {
-        localStorage.removeItem('lawyerReport');
-    }
-  }, [lawyerReport]);
-
-  useEffect(() => {
-      if (followUpActions) {
-          localStorage.setItem('followUpActions', followUpActions);
-      } else {
-          localStorage.removeItem('followUpActions');
-      }
-  }, [followUpActions]);
-
-  useEffect(() => {
-    localStorage.setItem('completedActions', JSON.stringify(completedActions));
-  }, [completedActions]);
-
   useEffect(() => {
       localStorage.setItem('receptionistSettings', JSON.stringify(settings));
   }, [settings]);
 
-  // Scroll to bottom of transcription
-  useEffect(() => {
-    if (transcriptionContainerRef.current) {
-        transcriptionContainerRef.current.scrollTop = transcriptionContainerRef.current.scrollHeight;
-    }
-  }, [transcriptionHistory, currentInputTranscription, currentOutputTranscription]);
+  // Handle consent acceptance
+  const handleConsentAccept = useCallback((consent: ConsentData) => {
+    setConsentData(consent);
+    localStorage.setItem('intakeConsent', JSON.stringify(consent));
+    setShowConsentModal(false);
+  }, []);
 
   const stateRef = useRef({
       callState,
@@ -232,9 +248,9 @@ const App: React.FC = () => {
         mediaRecorderRef.current.stop();
     }
 
-    liveSessionRef.current?.then(session => session.close()).catch(e => logger.error('Failed to close session', e, 'cleanup'));
+    liveSessionRef.current?.then(session => session.close()).catch(console.error);
     liveSessionRef.current = null;
-    
+
     micStreamRef.current?.getTracks().forEach(track => track.stop());
     micStreamRef.current = null;
 
@@ -243,19 +259,19 @@ const App: React.FC = () => {
         audioWorkletNodeRef.current = null;
     }
 
-    inputAudioContextRef.current?.close().catch(e => logger.error('Failed to close input audio context', e, 'cleanup'));
-    outputAudioContextRef.current?.close().catch(e => logger.error('Failed to close output audio context', e, 'cleanup'));
+    inputAudioContextRef.current?.close().catch(console.error);
+    outputAudioContextRef.current?.close().catch(console.error);
     inputAudioContextRef.current = null;
     outputAudioContextRef.current = null;
     mixedAudioDestinationRef.current = null;
-    
+
     audioSourcesRef.current.forEach(source => source.stop());
     audioSourcesRef.current.clear();
     nextAudioStartTimeRef.current = 0;
   }, []);
 
   const handleToolCall = useCallback((fc: FunctionCall) => {
-    logger.debug(`Handling tool call: ${fc.name}`, fc.args, 'toolCall');
+    console.log("Handling tool call:", fc.name, fc.args);
     const result = "ok";
 
     switch (fc.name) {
@@ -278,7 +294,7 @@ const App: React.FC = () => {
       case 'send_follow_up_email':
         break;
       default:
-        logger.warn(`Unknown function call: ${fc.name}`, undefined, 'toolCall');
+        console.warn("Unknown function call:", fc.name);
     }
 
     liveSessionRef.current?.then(session => {
@@ -364,7 +380,7 @@ const App: React.FC = () => {
       }));
   };
 
-  const startCall = useCallback(async () => {
+  const startCallInternal = useCallback(async () => {
     const apiKey = import.meta.env.VITE_API_KEY;
     if (!apiKey) {
       setErrorMessage("API Key Configuration Error: Please set VITE_API_KEY in your Vercel environment variables.");
@@ -374,29 +390,24 @@ const App: React.FC = () => {
     }
 
     if (!navigator.onLine) {
-        setErrorMessage("Network Error: No internet connection detected.");
+        setErrorMessage("Network Error");
         setCallState(CallState.ERROR);
         return;
     }
-    
+
     setCallState(CallState.CONNECTING);
     setErrorMessage(null);
-    setLawyerReport(null);
-    setFollowUpActions('');
-    setCompletedActions({});
-    
-    setClientInfo({});
+    // Initialize client info with consent data (jurisdiction, contact preferences)
+    setClientInfo({
+      jurisdiction: consentData?.jurisdictionState || undefined,
+      smsOptIn: consentData?.smsOptIn || false,
+      emailOptIn: consentData?.emailOptIn || true,
+    });
     setTranscriptionHistory([]);
     setCurrentInputTranscription('');
     setCurrentOutputTranscription('');
     setIsUrgent(false);
     setUrgencyReason('');
-    setRecordingUrl(null);
-    setCrmExportStatus({
-        clio: CRMExportStatus.IDLE,
-        myCase: CRMExportStatus.IDLE,
-        lawmatics: CRMExportStatus.IDLE,
-    });
     audioChunksRef.current = [];
 
     try {
@@ -414,26 +425,8 @@ const App: React.FC = () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micStreamRef.current = stream;
-      } catch (err: unknown) {
-        let appError: AppError;
-
-        if (err instanceof Error) {
-          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-            appError = new MicrophonePermissionError('User denied microphone access', { originalError: err.name });
-          } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-            appError = new MicrophoneNotFoundError('No microphone detected', { originalError: err.name });
-          } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-            appError = new MicrophoneNotReadableError('Microphone not readable', { originalError: err.name });
-          } else {
-            appError = new AudioContextError('Failed to initialize microphone', { originalError: err.message });
-          }
-        } else {
-          appError = new AudioContextError('Unknown microphone error');
-        }
-
-        const userFriendlyMsg = getUserFriendlyMessage(appError.code);
-        setErrorMessage(userFriendlyMsg);
-        logger.error('Microphone initialization failed', appError, 'audio');
+      } catch (err: any) {
+        setErrorMessage("Microphone Error");
         setCallState(CallState.ERROR);
         cleanup();
         return;
@@ -456,7 +449,7 @@ const App: React.FC = () => {
         model: 'gemini-2.5-flash-native-audio-preview-09-2025',
         callbacks: {
           onopen: async () => {
-            logger.info("Gemini Live session opened successfully", undefined, 'session');
+            console.log("Session opened.");
             setCallState(CallState.ACTIVE);
             setTimeout(() => {
                 sessionPromise.then(session => {
@@ -466,7 +459,7 @@ const App: React.FC = () => {
                         mimeType: 'audio/pcm;rate=16000',
                     };
                     session.sendRealtimeInput({ media: pcmBlob });
-                }).catch(e => logger.warn('Failed to send initial silent frame', e, 'audio'));
+                }).catch(e => console.error("Failed to send initial silent frame:", e));
             }, 800);
 
             // --- Worklet Setup ---
@@ -492,32 +485,50 @@ const App: React.FC = () => {
             try {
               await inputAudioContext.audioWorklet.addModule(workletURL);
             } catch (e) {
-              setErrorMessage("Audio Engine Error: Failed to initialize audio processor. Please check that your browser supports AudioWorklet.");
+              setErrorMessage("Audio Engine Error");
               setCallState(CallState.ERROR);
               cleanup();
               return;
             } finally {
               URL.revokeObjectURL(workletURL);
             }
-            
+
             const micSource = inputAudioContext.createMediaStreamSource(stream);
             const workletNode = new AudioWorkletNode(inputAudioContext, 'audio-processor');
             audioWorkletNodeRef.current = workletNode;
 
             workletNode.port.onmessage = (event) => {
-              const pcmBlob = {
-                data: encode(new Uint8Array(event.data.buffer)),
-                mimeType: 'audio/pcm;rate=16000',
-              };
-              sessionPromise.then((session) => {
-                 session.sendRealtimeInput({ media: pcmBlob });
-              }).catch(e => logger.error('Failed to send audio input', e, 'audio'));
+              try {
+                if (!event.data || !event.data.buffer) {
+                  console.warn('[DEBUG] Received invalid audio data from worklet');
+                  return;
+                }
+                const pcmBlob = {
+                  data: encode(new Uint8Array(event.data.buffer)),
+                  mimeType: 'audio/pcm;rate=16000',
+                };
+                sessionPromise.then((session) => {
+                   if (session && typeof session.sendRealtimeInput === 'function') {
+                     session.sendRealtimeInput({ media: pcmBlob });
+                   }
+                }).catch((err) => {
+                  console.error('[DEBUG] Error sending audio to session:', err);
+                });
+              } catch (error) {
+                console.error('[DEBUG] Error processing worklet message:', error);
+              }
             };
-            
+
+            workletNode.port.onerror = (error) => {
+              console.error('[DEBUG] AudioWorklet error:', error);
+            };
+
             micSource.connect(workletNode);
             workletNode.connect(inputAudioContext.destination);
           },
           onmessage: async (message: LiveServerMessage) => {
+            // Use unstable_batchedUpdates to batch multiple state updates
+            // This prevents excessive re-renders from rapid transcription updates
             if (message.serverContent?.outputTranscription) {
               setCurrentOutputTranscription(prev => prev + message.serverContent!.outputTranscription!.text);
             } else if (message.serverContent?.inputTranscription) {
@@ -543,7 +554,7 @@ const App: React.FC = () => {
             const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
             if (base64Audio && outputAudioContextRef.current) {
               const audioContext = outputAudioContextRef.current;
-              
+
               if (stateRef.current.settings.responseDelay > 0) {
                  const now = audioContext.currentTime;
                  if (nextAudioStartTimeRef.current < now) {
@@ -575,20 +586,14 @@ const App: React.FC = () => {
             }
           },
           onerror: (e: ErrorEvent) => {
-            logger.error("Gemini Live API Error", e, 'geminiApi');
-            const isInitial = stateRef.current.callState === CallState.CONNECTING;
-            const msg = isInitial 
-                ? "Failed to connect to AI Service. Please check your network connection and try again."
-                : "Connection to AI Service lost. Please restart the session.";
-            
-            setErrorMessage(msg);
+            console.error("Gemini Live API Error:", e);
+            setErrorMessage("Connection Error");
             setCallState(CallState.ERROR);
             cleanup();
           },
           onclose: (e: CloseEvent) => {
             if (stateRef.current.callState === CallState.ACTIVE) {
-                 const reason = e.reason ? ` Reason: ${e.reason}` : "";
-                 setErrorMessage(`Session Ended Unexpectedly: The connection was closed.${reason} (Code: ${e.code})`);
+                 setErrorMessage(`Session Ended`);
                  setCallState(CallState.ERROR);
             } else if (stateRef.current.callState !== CallState.PROCESSING) {
                 setCallState(CallState.ENDED);
@@ -598,7 +603,6 @@ const App: React.FC = () => {
         },
         config: {
           responseModalities: [Modality.AUDIO],
-          // Use settings.voiceName here
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: settings.voiceName } } },
           systemInstruction: getSystemInstruction(settings),
           tools: [{ functionDeclarations: [ updateClientInfoDeclaration, updateCaseDetailsDeclaration, requestDocumentsDeclaration, flagCaseAsUrgentDeclaration, bookAppointmentDeclaration, sendFollowUpEmailDeclaration ] }],
@@ -616,198 +620,49 @@ const App: React.FC = () => {
     }
   }, [cleanup, handleToolCall, settings]);
 
+  // Wrapper function that checks for consent before starting
+  const startCall = useCallback(async () => {
+    if (!consentData) {
+      setShowConsentModal(true);
+      return;
+    }
+    await startCallInternal();
+  }, [consentData, startCallInternal]);
+
+  // Effect to start call after consent is given (when modal was shown from start button)
+  useEffect(() => {
+    if (consentData && showConsentModal === false && callState === CallState.IDLE) {
+      // Consent was just given, check if we should auto-start
+      // Only auto-start if the consent was just given (within last second)
+      const consentTime = new Date(consentData.disclaimerAcceptedAt).getTime();
+      const now = Date.now();
+      if (now - consentTime < 1000) {
+        startCallInternal();
+      }
+    }
+  }, [consentData, showConsentModal, callState, startCallInternal]);
+
   const endCall = useCallback(async () => {
     if (stateRef.current.callState === CallState.PROCESSING || stateRef.current.callState === CallState.ENDED) return;
-    
-    // Stop Recorder & Prepare Download
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.requestData();
-        mediaRecorderRef.current.stop();
-        // Give a small delay to ensure ondataavailable fires for the last chunk
-        setTimeout(() => {
-             const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-             const url = URL.createObjectURL(blob);
-             setRecordingUrl(url);
-        }, 300);
-    }
-
-    setCallState(CallState.PROCESSING);
+    setCallState(CallState.ENDED);
     cleanup();
-
-    const { clientInfo, transcriptionHistory, currentInputTranscription, currentOutputTranscription, isUrgent, urgencyReason } = stateRef.current;
-    
-    const fullTranscript = transcriptionHistory
-      .concat( currentInputTranscription ? [{speaker: 'user', text: currentInputTranscription}] : [])
-      .concat( currentOutputTranscription ? [{speaker: 'ai', text: currentOutputTranscription}] : [])
-      .map(t => `${t.speaker === 'user' ? 'Client' : 'Sarah'}: ${t.text}`)
-      .join('\n');
-
-    if (!fullTranscript || Object.keys(clientInfo).length < 2) {
-        setErrorMessage("Report Error: Insufficient data gathered during the call. Please ensure the conversation is captured.");
-        setCallState(CallState.ENDED);
-        return;
-    }
-
-    try {
-        const report = await generateLawyerReport(clientInfo, fullTranscript, isUrgent, urgencyReason);
-        setLawyerReport(report);
-        try {
-            const actionsResponse = await generateFollowUpActions(report);
-            setFollowUpActions(actionsResponse.text);
-        } catch (actionError) {
-             setErrorMessage("Action Generation Warning: Could not generate follow-up checklist, but the main report is saved.");
-        }
-    } catch (error) {
-        let msg = "Report Generation Error: An unexpected error occurred.";
-        if (error instanceof Error) {
-            if (error.message.includes('429')) msg = "Service Busy: Too many requests. Please try again later.";
-            else if (error.message.includes('503')) msg = "Service Unavailable: The AI service is currently down.";
-            else if (error.message.includes('API key')) msg = "Configuration Error: Invalid API Key.";
-            else msg = `Report Error: ${error.message}`;
-        }
-        setErrorMessage(msg);
-    } finally {
-        setCallState(CallState.ENDED);
-    }
   }, [cleanup]);
 
   useEffect(() => {
     return () => cleanup();
   }, [cleanup]);
 
-  // --- Sub-Components ---
-
-  const IntakeField = ({ icon: Icon, label, value }: { icon: any, label: string, value?: string }) => (
-    <div className="relative group">
-        <label className="text-[11px] font-medium text-gray-500 uppercase mb-1 block">{label}</label>
-        <div className={`
-            flex items-center gap-3 bg-[#ffffff05] border border-[#2D3139] rounded-lg p-3.5 
-            group-hover:border-[#00FFA3] transition-all duration-200 group-hover:shadow-[0_0_10px_rgba(0,255,163,0.1)]
-        `}>
-            <Icon className="w-5 h-5 text-gray-500 group-hover:text-[#00FFA3] transition-colors" />
-            <div className="flex-1 text-sm font-medium text-white truncate">
-                {value || <span className="text-gray-600">---</span>}
-            </div>
-        </div>
-    </div>
-  );
-
-  const SettingsPanel = () => (
-      <div className="col-span-1 lg:col-span-9 bg-[#1E2128] border border-[#2D3139] rounded-2xl p-8 shadow-xl overflow-y-auto">
-          <div className="flex items-center gap-3 mb-8 border-b border-[#2D3139] pb-4">
-              <div className="bg-[#00FFA3]/10 p-2 rounded-lg">
-                <SettingsIcon />
-              </div>
-              <h2 className="text-lg font-bold text-white tracking-wide">RECEPTIONIST CONFIGURATION</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Identity Section */}
-              <div className="space-y-6">
-                  <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">AI Persona</h3>
-                  
-                  <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Assistant Name</label>
-                      <input 
-                        type="text" 
-                        value={settings.aiName}
-                        onChange={e => setSettings({...settings, aiName: e.target.value})}
-                        className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors"
-                      />
-                  </div>
-
-                  <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Voice & Tone</label>
-                      <div className="grid grid-cols-2 gap-3">
-                          <select 
-                             value={settings.tone}
-                             onChange={e => setSettings({...settings, tone: e.target.value})}
-                             className="bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none"
-                          >
-                              <option value="Professional and Empathetic">Professional & Empathetic</option>
-                              <option value="Strict and Formal">Strict & Formal</option>
-                              <option value="Casual and Friendly">Casual & Friendly</option>
-                              <option value="Urgent and Direct">Urgent & Direct</option>
-                          </select>
-                           <select 
-                             value={settings.voiceName}
-                             onChange={e => setSettings({...settings, voiceName: e.target.value})}
-                             className="bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none"
-                          >
-                             {Object.entries(availableVoices).map(([key, name]) => (
-                                <option key={key} value={key}>{name}</option>
-                             ))}
-                          </select>
-                      </div>
-                  </div>
-                  
-                  <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Speech Pace & Style</label>
-                       <select 
-                            value={settings.languageStyle}
-                            onChange={e => setSettings({...settings, languageStyle: e.target.value})}
-                            className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm outline-none"
-                        >
-                            <option value="calm, clear, and natural human voice">Calm & Natural</option>
-                            <option value="slow and deliberate pace">Slow & Deliberate</option>
-                            <option value="fast and efficient pace">Fast & Efficient</option>
-                        </select>
-                  </div>
-
-                  <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Thinking Delay (Response Time)</label>
-                      <div className="flex items-center gap-4 bg-[#16181D] border border-[#2D3139] rounded-lg p-3">
-                           <input 
-                             type="range" 
-                             min="0" 
-                             max="2000" 
-                             step="100" 
-                             value={settings.responseDelay} 
-                             onChange={e => setSettings({...settings, responseDelay: parseInt(e.target.value)})}
-                             className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-[#00FFA3]"
-                           />
-                           <span className="text-xs font-mono text-[#00FFA3] w-12 text-right">{(settings.responseDelay / 1000).toFixed(1)}s</span>
-                      </div>
-                  </div>
-              </div>
-
-              {/* Script Section */}
-              <div className="space-y-6">
-                   <h3 className="text-xs font-bold text-[#00FFA3] uppercase tracking-wider mb-2">Script & Knowledge</h3>
-                   
-                   <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Opening Greeting Script</label>
-                      <textarea 
-                        rows={3}
-                        value={settings.openingLine}
-                        onChange={e => setSettings({...settings, openingLine: e.target.value})}
-                        className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none"
-                      />
-                  </div>
-
-                  <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Firm Knowledge Base (Bio & Services)</label>
-                      <textarea 
-                        rows={4}
-                        value={settings.firmBio}
-                        onChange={e => setSettings({...settings, firmBio: e.target.value})}
-                        placeholder="We specialize in..."
-                        className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none"
-                      />
-                  </div>
-
-                  <div>
-                      <label className="block text-xs font-medium text-gray-400 mb-1.5 uppercase">Urgency Triggers (Keywords)</label>
-                      <textarea 
-                        rows={2}
-                        value={settings.urgencyKeywords.join(', ')}
-                        onChange={e => setSettings({...settings, urgencyKeywords: e.target.value.split(',').map(s => s.trim())})}
-                        placeholder="court date, deadline, police..."
-                        className="w-full bg-[#16181D] border border-[#2D3139] rounded-lg p-3 text-white text-sm focus:border-[#00FFA3] outline-none transition-colors resize-none"
-                      />
-                      <p className="text-[10px] text-gray-500 mt-1">Separate keywords with commas. These trigger the 'High Urgency' flag.</p>
-                  </div>
-              </div>
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <ThemeProvider settings={settings}>
+        <div className="flex items-center justify-center h-screen w-full bg-[#050505]">
+          <div className="flex flex-col items-center gap-4">
+            <svg className="w-12 h-12 animate-spin" style={{ color: 'var(--primary-accent, #00FFC8)' }} fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-[#6B7280]">Loading...</span>
           </div>
           
           <div className="mt-8 pt-6 border-t border-[#2D3139] flex justify-end">
@@ -852,347 +707,141 @@ const App: React.FC = () => {
                  <span className="text-[10px] font-bold tracking-[0.2em] text-[#00FFA3] mt-1">AI LEGAL RECEPTIONIST</span>
              </div>
         </div>
-        
-        <nav className="hidden lg:flex items-center gap-1 bg-[#1A1C20] p-1 rounded-lg border border-[#2D3139]">
-            {['LIVE_INTAKE', 'SETTINGS'].map((tab) => (
-                <button 
-                    key={tab} 
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-2 text-xs font-semibold rounded-md transition-all ${activeTab === tab ? 'bg-[#00FFA3] text-black shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                >
-                    {tab.replace('_', ' ')}
-                </button>
-            ))}
-        </nav>
-      </header>
+      </ThemeProvider>
+    );
+  }
 
-      {/* Main Grid */}
-      <main className="flex-1 p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:overflow-hidden lg:max-h-[calc(100vh-80px)] h-auto pb-24 lg:pb-8">
-        
-        {activeTab === 'SETTINGS' ? (
-             <>
-                <div className="hidden lg:block lg:col-span-3">
-                   {/* Placeholder for Left Nav if needed in settings, currently just keeping layout grid */}
-                   <div className="bg-[#1E2128] border border-[#2D3139] rounded-2xl p-6 h-full opacity-50 flex items-center justify-center">
-                       <p className="text-xs text-gray-500 font-medium uppercase tracking-widest text-center">Settings Mode Active</p>
-                   </div>
-                </div>
-                <SettingsPanel />
-             </>
-        ) : (
-            <>
-            {/* Left Column: Controls & Intake Form */}
-            <div className="lg:col-span-3 flex flex-col gap-6 lg:overflow-y-auto lg:pr-2">
-                <CallControl 
-                    callState={callState}
-                    startCall={startCall}
-                    endCall={endCall}
-                    errorMessage={null} // Handled by global banner
-                    selectedVoice={settings.voiceName} // Use settings voice
-                    onVoiceChange={(v) => setSettings(prev => ({...prev, voiceName: v}))} // Sync directly
-                    availableVoices={availableVoices}
-                />
+  // Show login page if auth is required and user is not logged in
+  if (requireAuth && !currentUser) {
+    return (
+      <ThemeProvider settings={settings}>
+        <LoginPage
+          onLogin={handleLogin}
+          branding={{
+            firmName: settings.firmName,
+            logoUrl: settings.brandLogoUrl,
+            primaryColor: settings.brandPrimaryColor,
+          }}
+        />
+      </ThemeProvider>
+    );
+  }
 
-                {/* Client Intake Card */}
-                <div className="bg-[#1E2128] border border-[#2D3139] rounded-2xl p-6 shadow-xl flex flex-col gap-4">
-                    <div className="flex items-center justify-between border-b border-[#2D3139] pb-4">
-                        <div className="flex items-center gap-2">
-                            <UserIcon />
-                            <h3 className="text-base font-semibold text-white">CLIENT PROFILE</h3>
-                        </div>
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-[#00FFA3]/10 rounded-md border border-[#00FFA3]/20">
-                            <ShieldIcon />
-                            <span className="text-[10px] font-bold text-[#00FFA3] tracking-wide">HIPAA SECURE</span>
-                        </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                        <IntakeField icon={UserIcon} label="Full Name" value={clientInfo.name} />
-                        <IntakeField icon={MailIcon} label="Email Address" value={clientInfo.email} />
-                        <IntakeField icon={PhoneIcon} label="Phone Number" value={clientInfo.phone} />
-                        <IntakeField icon={CalendarIcon} label="Appointment" value={clientInfo.appointment ? new Date(clientInfo.appointment).toLocaleString() : undefined} />
-                        
-                        <div className="relative group">
-                            <label className="text-[11px] font-medium text-gray-500 uppercase mb-1 block">Live Case Notes</label>
-                            <div className="bg-[#ffffff05] border border-[#2D3139] rounded-lg p-3.5 min-h-[80px] text-sm text-gray-300">
-                                {clientInfo.caseDetails || <span className="text-gray-600 italic">Listening for details...</span>}
-                            </div>
-                        </div>
+  return (
+    <ThemeProvider settings={settings}>
+    <div className="flex flex-col h-screen w-full bg-[#050505] text-white overflow-hidden">
+        {/* AI Disclaimer Banner - Always Visible */}
+        <AIDisclaimerBanner
+          firmName={settings.firmName}
+          primaryColor={settings.brandPrimaryColor || '#00FFC8'}
+          variant="full"
+          onLearnMore={() => setShowDisclaimerExpanded(true)}
+        />
 
-                        {clientInfo.requestedDocuments && clientInfo.requestedDocuments.length > 0 && (
-                            <div className="relative group">
-                                <label className="text-[11px] font-medium text-gray-500 uppercase mb-1 block">Requested Docs</label>
-                                <ul className="bg-[#ffffff05] border border-[#2D3139] rounded-lg p-3.5 space-y-1">
-                                    {clientInfo.requestedDocuments.map((doc, i) => (
-                                        <li key={i} className="text-sm text-[#00FFA3] flex items-center gap-2">
-                                            <DocumentIcon /> {doc}
-                                        </li>
-                                    ))}
-                                </ul>
+        {/* Main Content Container */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Loading Overlay */}
+          {(callState === CallState.CONNECTING || callState === CallState.PROCESSING) && (
+            <FullPageLoader
+              message={callState === CallState.CONNECTING ? 'Connecting to Gemini Live API...' : 'Generating Report...'}
+            />
+          )}
+
+          {/* Consent Modal */}
+          {showConsentModal && (
+            <ConsentModal
+              onAccept={handleConsentAccept}
+              firmName={settings.firmName}
+              primaryColor={settings.brandPrimaryColor || '#00FFC8'}
+            />
+          )}
+
+          {/* Sidebar */}
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            user={currentUser}
+            onLogout={handleLogout}
+            settings={settings}
+          />
+
+        {/* Main Content Area - Conditional Rendering Based on Active Tab */}
+        <main className="flex-1 flex flex-col p-8 overflow-hidden relative">
+
+            {/* Dashboard View - Default */}
+            {activeTab === 'dashboard' && (
+                <div className="flex-1 grid grid-cols-12 gap-8 h-full">
+                    {/* Left Column: Live Intake */}
+                    <div className="col-span-7 h-full flex flex-col gap-6">
+                        {errorMessage && (
+                            <div className="bg-red-500/20 border border-red-500/50 text-red-200 text-sm p-3 rounded-lg flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                {errorMessage}
+                                <button onClick={() => setErrorMessage(null)} className="ml-auto hover:text-white">✕</button>
                             </div>
                         )}
-                    </div>
-                    
-                    {isUrgent && (
-                        <div className="mt-2 p-4 bg-red-500/10 border border-red-500/50 rounded-xl flex gap-3 animate-pulse">
-                            <AlertIcon />
-                            <div>
-                                <p className="text-xs font-bold text-red-400 uppercase tracking-wider">Urgent Priority</p>
-                                <p className="text-xs text-red-300 mt-1">{urgencyReason}</p>
-                            </div>
+                        <div className="flex-1">
+                            <LiveIntakePanel
+                                callState={callState}
+                                startCall={startCall}
+                                endCall={endCall}
+                                transcriptHistory={transcriptionHistory}
+                                currentInput={currentInputTranscription}
+                                currentOutput={currentOutputTranscription}
+                            />
                         </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Center Column: Transcript */}
-            <div className="lg:col-span-5 flex flex-col bg-[#16181D] border border-[#2D3139] rounded-2xl overflow-hidden shadow-2xl h-[600px] lg:h-auto relative">
-                <div className="h-14 border-b border-[#2D3139] bg-[#1E2128] px-6 flex items-center justify-between shrink-0">
-                    <div>
-                        <h2 className="text-sm font-bold text-white tracking-wide">LIVE TRANSCRIPT</h2>
-                        <p className="text-[10px] text-gray-500 font-medium">REAL-TIME CONVERSATION LOG</p>
                     </div>
-                    <div className="flex items-center gap-3">
-                        {recordingUrl && (
-                            <a 
-                            href={recordingUrl} 
-                            download={`recording-${Date.now()}.webm`}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-[#00FFA3]/10 hover:bg-[#00FFA3]/20 border border-[#00FFA3]/30 rounded-full transition-all group"
-                            >
-                                <DownloadIcon />
-                                <span className="text-[10px] font-bold text-[#00FFA3] uppercase tracking-wide group-hover:text-[#00FFA3]">Download Recording</span>
-                            </a>
-                        )}
-                        <div className="flex items-center gap-2">
-                            <span className={`h-2 w-2 rounded-full ${callState === CallState.ACTIVE ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`}></span>
-                            <span className="text-[10px] text-gray-400 font-mono">REC</span>
+                    {/* Right Column: Analytics & Case History */}
+                    <div className="col-span-5 h-full flex flex-col gap-8">
+                        <div className="h-[45%]">
+                            <AnalyticsPanel />
+                        </div>
+                        <div className="flex-1">
+                            <CaseHistoryPanel currentClient={clientInfo} onNavigate={setActiveTab} />
                         </div>
                     </div>
                 </div>
-                
-                <div ref={transcriptionContainerRef} className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth">
-                    {transcriptionHistory.length === 0 && !currentInputTranscription && !currentOutputTranscription && (
-                        <div className="h-full flex flex-col items-center justify-center opacity-20">
-                            <ChatIcon />
-                            <p className="mt-4 text-sm font-medium">Start a session to view transcript</p>
-                        </div>
-                    )}
-                    
-                    {transcriptionHistory.map((t, i) => (
-                        <div key={i} className={`flex ${t.speaker === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`
-                                max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed shadow-sm
-                                ${t.speaker === 'user' 
-                                    ? 'bg-[#2D3139] text-gray-200 rounded-tr-none border-l-2 border-transparent' 
-                                    : 'bg-[#1E2128] text-white rounded-tl-none border-l-2 border-[#00FFA3]'
-                                }
-                            `}>
-                                <p>{t.text}</p>
-                            </div>
-                        </div>
-                    ))}
+            )}
 
-                    {/* Real-time Streaming Bubbles */}
-                    {currentInputTranscription && (
-                        <div className="flex justify-end">
-                            <div className="max-w-[85%] rounded-2xl rounded-tr-none p-4 text-sm leading-relaxed bg-[#2D3139]/70 text-gray-300 border-l-2 border-transparent animate-pulse">
-                                <p>{currentInputTranscription} <span className="inline-block w-1 h-3 bg-gray-400 ml-1 animate-bounce"></span></p>
-                            </div>
-                        </div>
-                    )}
-                    {currentOutputTranscription && (
-                        <div className="flex justify-start">
-                            <div className="max-w-[85%] rounded-2xl rounded-tl-none p-4 text-sm leading-relaxed bg-[#1E2128]/70 text-gray-200 border-l-2 border-[#00FFA3]/50 animate-pulse">
-                                <p>{currentOutputTranscription} <span className="inline-block w-1 h-3 bg-[#00FFA3] ml-1 animate-bounce"></span></p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
+            {/* Analytics Full View */}
+            {activeTab === 'analytics' && (
+                <AnalyticsPanel fullPage={true} />
+            )}
 
-            {/* Right Column: Reports & Actions */}
-            <div className="lg:col-span-4 flex flex-col gap-6 lg:overflow-y-auto">
-                
-                {/* Read-Only Case Report */}
-                <div className={`bg-[#1E2128] border border-[#2D3139] rounded-2xl overflow-hidden shadow-xl transition-opacity duration-500 ${lawyerReport ? 'opacity-100' : 'opacity-60 grayscale'}`}>
-                    <div className="bg-[#16181D] px-6 py-4 border-b border-[#2D3139] flex items-center justify-between">
-                        <h2 className="text-sm font-bold text-white tracking-wide">LEGAL REPORT</h2>
-                        {lawyerReport?.urgencyLevel && (
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                lawyerReport.urgencyLevel === 'High' ? 'bg-red-500 text-white' : 
-                                lawyerReport.urgencyLevel === 'Medium' ? 'bg-yellow-500 text-black' : 
-                                'bg-green-500 text-black'
-                            }`}>
-                                {lawyerReport.urgencyLevel}
-                            </span>
-                        )}
+            {/* Case History Full View */}
+            {activeTab === 'history' && (
+                <CaseHistoryPanel currentClient={clientInfo} fullPage={true} />
+            )}
+
+            {/* Workflow View */}
+            {activeTab === 'workflow' && (
+                <WorkflowPanel />
+            )}
+
+            {/* Compliance View */}
+            {activeTab === 'compliance' && (
+                <CompliancePanel />
+            )}
+
+            {/* Settings View */}
+            {activeTab === 'settings' && (
+                <div className="flex flex-col h-full overflow-hidden">
+                    <div className="mb-6">
+                        <h1 className="text-3xl font-bold text-white mb-2">Settings & Configuration</h1>
+                        <p className="text-lg text-gray-400">Configure AI personality, integrations, and preferences</p>
                     </div>
-
-                    <div className="p-6 space-y-6">
-                        {!lawyerReport ? (
-                            <div className="flex flex-col items-center justify-center text-gray-600 py-10">
-                                <p className="text-xs uppercase tracking-widest font-semibold">Report Pending</p>
-                            </div>
-                        ) : (
-                            <>
-                                {/* Read-Only Client Details */}
-                                <div className="grid grid-cols-1 gap-2">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Client</label>
-                                    <div className="text-sm text-white font-medium bg-[#16181D] border border-[#2D3139] rounded px-3 py-2">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-[#00FFA3]">{lawyerReport.clientDetails.name}</span>
-                                            <span className="text-gray-500 text-xs">{lawyerReport.clientDetails.phone}</span>
-                                        </div>
-                                        <div className="text-gray-400 text-xs border-t border-[#2D3139] pt-1">
-                                            {lawyerReport.clientDetails.email}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Case Summary */}
-                                <div className="grid grid-cols-1 gap-2">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Case Summary</label>
-                                    <div className="text-sm text-gray-300 leading-relaxed bg-[#16181D] border border-[#2D3139] rounded px-3 py-2 max-h-32 overflow-y-auto">
-                                        {lawyerReport.caseSummary}
-                                    </div>
-                                </div>
-
-                                {/* Assessment */}
-                                <div className="grid grid-cols-1 gap-2">
-                                    <label className="text-[10px] font-bold text-[#00FFA3] uppercase">Initial Assessment</label>
-                                    <div className="text-sm text-gray-300 prose prose-invert prose-p:my-1 prose-strong:text-white bg-[#16181D] border-l-2 border-[#00FFA3] rounded-r px-3 py-2 text-xs" dangerouslySetInnerHTML={{ __html: marked.parse(lawyerReport.initialAssessment)}}></div>
-                                </div>
-
-                                {/* Actionable Next Steps */}
-                                <div className="grid grid-cols-1 gap-2">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Strategic Next Steps</label>
-                                    <div className="text-sm text-gray-300 prose prose-invert prose-p:my-1 prose-ul:my-1 prose-li:my-0 bg-[#16181D] border border-[#2D3139] rounded px-3 py-2 max-h-40 overflow-y-auto text-xs" dangerouslySetInnerHTML={{ __html: marked.parse(lawyerReport.actionableNextSteps)}}></div>
-                                </div>
-
-                                {/* Docs Link */}
-                                <div className="flex items-center justify-between bg-[#16181D] rounded p-3 border border-[#2D3139]">
-                                    <span className="text-xs text-gray-400 font-medium">Evidence Folder</span>
-                                    <a href={lawyerReport.documentCollection.uploadLink} target="_blank" rel="noreferrer" className="text-xs text-[#00FFA3] font-bold hover:underline flex items-center gap-1">
-                                        ACCESS FILES &rarr;
-                                    </a>
-                                </div>
-                            </>
-                        )}
+                    <div className="flex-1 overflow-hidden">
+                        <SettingsPanel settings={settings} setSettings={setSettings} />
                     </div>
                 </div>
-                
-                {/* Follow Up Checklists */}
-                {followUpActions && (
-                    <div className="bg-[#1E2128] border border-[#2D3139] rounded-2xl p-6 shadow-xl">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-[#2D3139] pb-2">Action Checklist</h3>
-                        <div className="space-y-2">
-                            {/* We parse the markdown list into items manually for custom checkbox UI */}
-                            {followUpActions.split('\n').filter(line => line.trim().startsWith('-') || line.trim().startsWith('*')).map((line, idx) => {
-                                const text = line.replace(/^[-*]\s/, '');
-                                const isChecked = !!completedActions[idx];
-                                return (
-                                    <div 
-                                        key={idx} 
-                                        onClick={() => toggleAction(idx)}
-                                        className={`
-                                            flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all
-                                            ${isChecked ? 'bg-[#00FFA3]/5 border border-[#00FFA3]/20' : 'bg-[#16181D] border border-transparent hover:border-gray-700'}
-                                        `}
-                                    >
-                                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isChecked ? 'bg-[#00FFA3] border-[#00FFA3]' : 'border-gray-600'}`}>
-                                            {isChecked && <CheckIcon className="text-black w-3 h-3" />}
-                                        </div>
-                                        <span className={`text-xs ${isChecked ? 'text-gray-400 line-through' : 'text-gray-200'}`}>{text}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
+            )}
 
-                {/* CRM Integration */}
-                <div className={`bg-[#1E2128] border border-[#2D3139] rounded-2xl p-6 shadow-xl ${!lawyerReport ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <div className="flex items-center justify-between mb-4 border-b border-[#2D3139] pb-2">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">CRM Export</h3>
-                        <button onClick={clearCrmLogs} className="p-1 hover:bg-gray-700 rounded transition-colors group" title="Reset Logs">
-                            <RefreshIcon />
-                        </button>
-                    </div>
-                    <div className="space-y-3">
-                        {(Object.keys(crmIntegrations) as Array<keyof typeof crmIntegrations>).map(key => {
-                            const status = crmExportStatus[key];
-                            return (
-                                <div key={key} className="flex items-center justify-between p-3 bg-[#16181D] rounded-lg group hover:bg-[#252830] transition-colors border border-transparent hover:border-[#2D3139]">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center p-1.5 shrink-0">
-                                            <img src={crmIntegrations[key].logo} alt={crmIntegrations[key].name} className="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition-opacity" />
-                                        </div>
-                                        <span className="text-sm font-semibold text-gray-300 group-hover:text-white transition-colors truncate">{crmIntegrations[key].name}</span>
-                                    </div>
-                                    <button
-                                        onClick={() => initiateCrmExport(key)}
-                                        disabled={status !== CRMExportStatus.IDLE}
-                                        className={`
-                                            px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-md transition-all shrink-0 ml-3
-                                            ${status === CRMExportStatus.SUCCESS 
-                                                ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
-                                                : status === CRMExportStatus.EXPORTING 
-                                                    ? 'bg-gray-700 text-gray-400 animate-pulse' 
-                                                    : 'bg-[#00FFA3] text-[#0A0B0D] hover:bg-[#00D88A] shadow-[0_0_15px_rgba(0,255,163,0.1)] hover:shadow-[0_0_20px_rgba(0,255,163,0.3)]'}
-                                        `}
-                                    >
-                                        {status === CRMExportStatus.SUCCESS ? 'Synced' : status === CRMExportStatus.EXPORTING ? 'Syncing' : 'Export'}
-                                    </button>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-            </>
-        )}
-
-      </main>
-
-      {/* CRM Confirmation Modal */}
-      {showCrmModal && pendingCrm && lawyerReport && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-              <div className="bg-[#1E2128] border border-[#2D3139] rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
-                  <h3 className="text-lg font-bold text-white mb-4">Confirm CRM Export</h3>
-                  <div className="bg-[#16181D] p-4 rounded-lg border border-[#2D3139] mb-6">
-                      <p className="text-xs text-gray-500 uppercase mb-1">Destination</p>
-                      <div className="flex items-center gap-2 mb-4">
-                          <img src={crmIntegrations[pendingCrm].logo} className="h-4" alt="logo" />
-                          <span className="text-sm font-semibold text-white">{crmIntegrations[pendingCrm].name}</span>
-                      </div>
-                      
-                      <p className="text-xs text-gray-500 uppercase mb-1">Data to Transfer</p>
-                      <ul className="text-sm text-gray-300 space-y-1 list-disc pl-4">
-                          <li>Client Profile: <span className="text-white">{lawyerReport.clientDetails.name}</span></li>
-                          <li>Contact: <span className="text-white">{lawyerReport.clientDetails.email}</span></li>
-                          <li>Case Analysis & Assessment</li>
-                          <li>Transcript Log</li>
-                      </ul>
-                  </div>
-                  
-                  <div className="flex gap-3">
-                      <button 
-                        onClick={() => setShowCrmModal(false)}
-                        className="flex-1 py-3 rounded-lg border border-[#2D3139] text-gray-400 hover:text-white hover:bg-[#2D3139] transition-all font-medium text-sm"
-                      >
-                          Cancel
-                      </button>
-                      <button 
-                        onClick={confirmCrmExport}
-                        className="flex-1 py-3 rounded-lg bg-[#00FFA3] text-black hover:bg-[#00D88A] transition-all font-bold text-sm"
-                      >
-                          Confirm Export
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
+            {/* Bottom Status Bar - Only on Dashboard */}
+            {activeTab === 'dashboard' && <StatusBar />}
+        </main>
+        </div>
     </div>
+    </ThemeProvider>
   );
 };
 
