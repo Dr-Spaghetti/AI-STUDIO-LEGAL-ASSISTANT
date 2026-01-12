@@ -63,6 +63,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Local state for color pickers to prevent excessive re-renders during drag
+  const [localPrimaryColor, setLocalPrimaryColor] = useState(settings.brandPrimaryColor || '#00FFC8');
+  const [localSecondaryColor, setLocalSecondaryColor] = useState(settings.brandSecondaryColor || '#1A1D24');
+
+  // Sync local colors when settings change externally
+  React.useEffect(() => {
+    setLocalPrimaryColor(settings.brandPrimaryColor || '#00FFC8');
+    setLocalSecondaryColor(settings.brandSecondaryColor || '#1A1D24');
+  }, [settings.brandPrimaryColor, settings.brandSecondaryColor]);
+
   // Graph settings state
   const [graphSettings, setGraphSettings] = useState({
     showWeeklyTrends: true,
@@ -73,16 +83,18 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
   });
 
   // Handle settings update with save feedback
-  const handleSettingsChange = useCallback((updates: Partial<ReceptionistSettings>) => {
+  const handleSettingsChange = useCallback((updates: Partial<ReceptionistSettings>, showToast = true) => {
     const newSettings = { ...settings, ...updates };
     setSettings(newSettings);
 
-    // Show save feedback
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setToast({ message: 'Settings saved successfully', type: 'success' });
-    }, 300);
+    // Show save feedback (optional)
+    if (showToast) {
+      setIsSaving(true);
+      setTimeout(() => {
+        setIsSaving(false);
+        setToast({ message: 'Settings saved successfully', type: 'success' });
+      }, 300);
+    }
   }, [settings, setSettings]);
 
   // Handle logo file upload
@@ -319,14 +331,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 <div className="flex gap-3">
                   <input
                     type="color"
-                    value={settings.brandPrimaryColor || '#00FFC8'}
-                    onChange={(e) => handleSettingsChange({ brandPrimaryColor: e.target.value })}
+                    value={localPrimaryColor}
+                    onInput={(e) => setLocalPrimaryColor((e.target as HTMLInputElement).value)}
+                    onChange={(e) => handleSettingsChange({ brandPrimaryColor: e.target.value }, false)}
+                    onBlur={() => handleSettingsChange({ brandPrimaryColor: localPrimaryColor })}
                     className="w-14 h-[46px] rounded-lg border border-[#2D3139] cursor-pointer bg-transparent p-1"
                   />
                   <input
                     type="text"
-                    value={settings.brandPrimaryColor || '#00FFC8'}
-                    onChange={(e) => handleSettingsChange({ brandPrimaryColor: e.target.value })}
+                    value={localPrimaryColor}
+                    onChange={(e) => {
+                      setLocalPrimaryColor(e.target.value);
+                      handleSettingsChange({ brandPrimaryColor: e.target.value }, false);
+                    }}
+                    onBlur={() => handleSettingsChange({ brandPrimaryColor: localPrimaryColor })}
                     className="form-input flex-1"
                   />
                 </div>
@@ -335,14 +353,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 <div className="flex gap-3">
                   <input
                     type="color"
-                    value={settings.brandSecondaryColor || '#1A1D24'}
-                    onChange={(e) => handleSettingsChange({ brandSecondaryColor: e.target.value })}
+                    value={localSecondaryColor}
+                    onInput={(e) => setLocalSecondaryColor((e.target as HTMLInputElement).value)}
+                    onChange={(e) => handleSettingsChange({ brandSecondaryColor: e.target.value }, false)}
+                    onBlur={() => handleSettingsChange({ brandSecondaryColor: localSecondaryColor })}
                     className="w-14 h-[46px] rounded-lg border border-[#2D3139] cursor-pointer bg-transparent p-1"
                   />
                   <input
                     type="text"
-                    value={settings.brandSecondaryColor || '#1A1D24'}
-                    onChange={(e) => handleSettingsChange({ brandSecondaryColor: e.target.value })}
+                    value={localSecondaryColor}
+                    onChange={(e) => {
+                      setLocalSecondaryColor(e.target.value);
+                      handleSettingsChange({ brandSecondaryColor: e.target.value }, false);
+                    }}
+                    onBlur={() => handleSettingsChange({ brandSecondaryColor: localSecondaryColor })}
                     className="form-input flex-1"
                   />
                 </div>
@@ -355,8 +379,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               <div
                 className="p-4 rounded-lg border"
                 style={{
-                  backgroundColor: settings.brandSecondaryColor || '#1A1D24',
-                  borderColor: settings.brandPrimaryColor || '#00FFC8'
+                  backgroundColor: localSecondaryColor,
+                  borderColor: localPrimaryColor
                 }}
               >
                 <div className="flex items-center gap-3 mb-3">
@@ -365,7 +389,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                   ) : (
                     <div
                       className="font-bold text-lg"
-                      style={{ color: settings.brandPrimaryColor || '#00FFC8' }}
+                      style={{ color: localPrimaryColor }}
                     >
                       {settings.firmName || 'Your Firm Name'}
                     </div>
@@ -374,7 +398,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 <button
                   className="px-4 py-2 rounded-lg font-medium text-sm"
                   style={{
-                    backgroundColor: settings.brandPrimaryColor || '#00FFC8',
+                    backgroundColor: localPrimaryColor,
                     color: '#000'
                   }}
                 >
