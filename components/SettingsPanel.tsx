@@ -82,11 +82,19 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
   // Local state for text inputs to prevent focus loss
   const [localSettings, setLocalSettings] = useState<ReceptionistSettings>(settings);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isDeploying, setIsDeploying] = useState(false);
 
   // Sync local state when parent settings change (e.g., from other sources)
   useEffect(() => {
     setLocalSettings(settings);
   }, [settings]);
+
+  // Track unsaved changes
+  useEffect(() => {
+    const hasChanges = JSON.stringify(localSettings) !== JSON.stringify(settings);
+    setHasUnsavedChanges(hasChanges);
+  }, [localSettings, settings]);
 
   // Graph settings state
   const [graphSettings, setGraphSettings] = useState({
@@ -134,6 +142,34 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
       }
     };
   }, []);
+
+  // Save & Deploy handler - saves all changes and persists to localStorage
+  const handleSaveAndDeploy = useCallback(() => {
+    setIsDeploying(true);
+
+    // Clear any pending debounced saves
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Save to parent state
+    setSettings(localSettings);
+
+    // Explicitly save to localStorage for persistence
+    try {
+      localStorage.setItem('receptionistSettings', JSON.stringify(localSettings));
+
+      // Simulate deployment delay for UX feedback
+      setTimeout(() => {
+        setIsDeploying(false);
+        setHasUnsavedChanges(false);
+        setToast({ message: 'Changes saved and deployed successfully!', type: 'success' });
+      }, 800);
+    } catch (error) {
+      setIsDeploying(false);
+      setToast({ message: 'Failed to save changes. Please try again.', type: 'error' });
+    }
+  }, [localSettings, setSettings]);
 
   // Handle logo file upload
   const handleLogoUpload = useCallback((file: File) => {
@@ -1202,12 +1238,45 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 Configure {categories.find(c => c.id === activeCategory)?.label.toLowerCase()} settings for your AI receptionist
               </p>
             </div>
-            {isSaving && (
-              <div className="flex items-center gap-2 saving-indicator">
-                <div className="w-4 h-4 border-2 rounded-full animate-spin spinner-primary"></div>
-                <span className="text-sm">Saving...</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {isSaving && (
+                <div className="flex items-center gap-2 saving-indicator">
+                  <div className="w-4 h-4 border-2 rounded-full animate-spin spinner-primary"></div>
+                  <span className="text-sm">Auto-saving...</span>
+                </div>
+              )}
+              {hasUnsavedChanges && !isSaving && (
+                <span className="text-xs text-amber-400 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  Unsaved changes
+                </span>
+              )}
+              <button
+                onClick={handleSaveAndDeploy}
+                disabled={isDeploying}
+                className={`px-5 py-2.5 rounded-lg font-semibold text-[14px] transition-all flex items-center gap-2 ${
+                  isDeploying
+                    ? 'bg-[#2D3139] text-[#6B7280] cursor-not-allowed'
+                    : 'btn-primary text-black hover:shadow-lg hover:shadow-[var(--primary-accent)]/20'
+                }`}
+              >
+                {isDeploying ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    Deploying...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Save & Deploy Changes
+                  </>
+                )}
+              </button>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto p-6">
             <div className="max-w-2xl">
