@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "validate": "npx ts-node scripts/validate-launch.ts",
+    "typecheck": "tsc --noEmit",
     "db:generate": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > lib/database.types.ts"
   },
   "dependencies": {
