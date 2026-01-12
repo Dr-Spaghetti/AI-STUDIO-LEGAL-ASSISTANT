@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { ReceptionistSettings, Employee } from '../types';
+import { IntegrationSettings } from './settings/IntegrationSettings';
 
 interface SettingsPanelProps {
   settings: ReceptionistSettings;
@@ -978,59 +979,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
         );
 
       case 'integrations':
+        // Use tenant from localStorage or default to 'demo'
+        const tenantSlug = localStorage.getItem('currentTenantSlug') || 'demo';
+        const tenantId = localStorage.getItem('currentTenantId') || 'demo-tenant-id';
         return (
-          <div className="space-y-6">
-            <FormGroup label="CRM Integration">
-              <select
-                value={settings.defaultCRM || 'none'}
-                onChange={(e) => handleSettingsChange({ defaultCRM: e.target.value })}
-                className="form-input form-select"
-              >
-                <option value="none">None</option>
-                <option value="clio">Clio</option>
-                <option value="mycase">MyCase</option>
-                <option value="lawmatics">Lawmatics</option>
-                <option value="salesforce">Salesforce</option>
-                <option value="hubspot">HubSpot</option>
-              </select>
-            </FormGroup>
-            <FormGroup label="Email Service">
-              <select
-                value={settings.emailService || 'none'}
-                onChange={(e) => handleSettingsChange({ emailService: e.target.value })}
-                className="form-input form-select"
-              >
-                <option value="none">None</option>
-                <option value="gmail">Gmail / Google Workspace</option>
-                <option value="office365">Office 365</option>
-                <option value="smtp">Custom SMTP</option>
-              </select>
-            </FormGroup>
-            <FormGroup label="Calendar Integration">
-              <select
-                value={settings.calendarIntegration || 'none'}
-                onChange={(e) => handleSettingsChange({ calendarIntegration: e.target.value })}
-                className="form-input form-select"
-              >
-                <option value="none">None</option>
-                <option value="google">Google Calendar</option>
-                <option value="outlook">Outlook Calendar</option>
-                <option value="calendly">Calendly</option>
-              </select>
-            </FormGroup>
-            <FormGroup label="SMS Provider">
-              <select
-                value={settings.smsProvider || 'none'}
-                onChange={(e) => handleSettingsChange({ smsProvider: e.target.value })}
-                className="form-input form-select"
-              >
-                <option value="none">None</option>
-                <option value="twilio">Twilio</option>
-                <option value="messagebird">MessageBird</option>
-                <option value="vonage">Vonage</option>
-              </select>
-            </FormGroup>
-          </div>
+          <IntegrationSettings
+            tenantId={tenantId}
+            tenantSlug={tenantSlug}
+          />
         );
 
       case 'admin':

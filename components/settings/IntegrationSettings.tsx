@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Loader2,
 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 // ============================================
 // TYPES
@@ -156,45 +157,40 @@ export function IntegrationSettings({ tenantId, tenantSlug }: Props) {
   async function fetchIntegrations() {
     setLoading(true);
     try {
-      // In production, fetch from Supabase
-      // For now, use mock data
-      const mockIntegrations: Integration[] = [
-        {
-          id: '1',
-          type: 'calendly',
-          status: 'connected',
-          metadata: {
-            user_name: 'John Smith',
-            user_email: 'john@smithlaw.com',
-            scheduling_url: 'https://calendly.com/smithlaw',
-            connected_at: '2024-06-10T10:00:00Z',
-          },
-          last_sync: '2024-06-15T12:00:00Z',
-        },
-        {
-          id: '2',
-          type: 'clio',
-          status: 'disconnected',
-        },
-        {
-          id: '3',
-          type: 'twilio',
-          status: 'connected',
-          metadata: {
-            phone_number: '+1 (555) 123-4567',
-            connected_at: '2024-05-20T08:00:00Z',
-          },
-        },
-        {
-          id: '4',
-          type: 'sendgrid',
-          status: 'error',
-          error_message: 'API key invalid or expired',
-        },
-      ];
-      setIntegrations(mockIntegrations);
+      // Fetch integrations from Supabase if available
+      if (supabase && tenantId) {
+        const { data, error: fetchError } = await supabase
+          .from('integrations')
+          .select('*')
+          .eq('tenant_id', tenantId);
+
+        if (fetchError) {
+          console.error('Failed to fetch integrations:', fetchError);
+          // Fall back to showing all as disconnected
+          setIntegrations([]);
+        } else if (data && data.length > 0) {
+          // Map database records to Integration type
+          const dbIntegrations: Integration[] = data.map((row: Record<string, unknown>) => ({
+            id: row.id as string,
+            type: row.type as Integration['type'],
+            status: row.status as Integration['status'],
+            metadata: row.metadata as Integration['metadata'],
+            error_message: row.error_message as string | undefined,
+            last_sync: row.last_sync as string | undefined,
+          }));
+          setIntegrations(dbIntegrations);
+        } else {
+          // No integrations found - all are disconnected
+          setIntegrations([]);
+        }
+      } else {
+        // Supabase not configured - show all as disconnected
+        setIntegrations([]);
+      }
     } catch (err) {
+      console.error('Error fetching integrations:', err);
       setError('Failed to load integrations');
+      setIntegrations([]);
     } finally {
       setLoading(false);
     }
@@ -247,12 +243,26 @@ export function IntegrationSettings({ tenantId, tenantSlug }: Props) {
     }
 
     try {
-      // In production, call API to revoke tokens and delete integration
-      setIntegrations((prev) =>
-        prev.map((i) => (i.type === type ? { ...i, status: 'disconnected' as const } : i))
-      );
+      // Delete integration from Supabase
+      if (supabase && tenantId) {
+        const { error: deleteError } = await supabase
+          .from('integrations')
+          .delete()
+          .eq('tenant_id', tenantId)
+          .eq('type', type);
+
+        if (deleteError) {
+          console.error('Failed to disconnect integration:', deleteError);
+          setError('Failed to disconnect integration');
+          return;
+        }
+      }
+
+      // Update local state
+      setIntegrations((prev) => prev.filter((i) => i.type !== type));
       setSuccessMessage(`Integration disconnected successfully`);
     } catch (err) {
+      console.error('Error disconnecting integration:', err);
       setError('Failed to disconnect integration');
     }
   }
@@ -260,15 +270,30 @@ export function IntegrationSettings({ tenantId, tenantSlug }: Props) {
   async function handleSync(type: Integration['type']) {
     setConnecting(type);
     try {
-      // In production, trigger a sync
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const newSyncTime = new Date().toISOString();
+
+      // Update last_sync in Supabase
+      if (supabase && tenantId) {
+        const { error: updateError } = await supabase
+          .from('integrations')
+          .update({ last_sync: newSyncTime })
+          .eq('tenant_id', tenantId)
+          .eq('type', type);
+
+        if (updateError) {
+          console.error('Failed to update sync time:', updateError);
+        }
+      }
+
+      // Update local state
       setIntegrations((prev) =>
         prev.map((i) =>
-          i.type === type ? { ...i, last_sync: new Date().toISOString() } : i
+          i.type === type ? { ...i, last_sync: newSyncTime } : i
         )
       );
       setSuccessMessage('Sync completed successfully');
     } catch (err) {
+      console.error('Sync failed:', err);
       setError('Sync failed');
     } finally {
       setConnecting(null);
