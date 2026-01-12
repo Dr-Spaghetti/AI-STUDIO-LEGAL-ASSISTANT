@@ -71,14 +71,19 @@ TWILIO_PHONE_NUMBER=+1234567890
 # SendGrid Email
 SENDGRID_API_KEY=your-sendgrid-key
 
-# Calendly
+# Calendly OAuth
 CALENDLY_CLIENT_ID=your-client-id
 CALENDLY_CLIENT_SECRET=your-client-secret
+CALENDLY_REDIRECT_URI=https://YOUR-PROJECT.vercel.app/api/integrations/calendly/callback
 
-# Clio
+# Clio OAuth
 CLIO_CLIENT_ID=your-client-id
 CLIO_CLIENT_SECRET=your-client-secret
+CLIO_REDIRECT_URI=https://YOUR-PROJECT.vercel.app/api/integrations/clio/callback
 ```
+
+> **Important:** Replace `YOUR-PROJECT.vercel.app` with your actual Vercel domain (or custom domain).
+> For detailed OAuth setup instructions, see [VERCEL_SETUP.md](./VERCEL_SETUP.md).
 
 ---
 
@@ -318,6 +323,7 @@ supabase db reset --linked
 | `API key invalid` | Wrong env var | Check VITE_API_KEY |
 | `CORS error` | Origin blocked | Configure Vercel CORS |
 | `Supabase error` | Connection issue | Check URL/key |
+| `redirect_uri_mismatch` | OAuth URI pointing to localhost | See [VERCEL_SETUP.md](./VERCEL_SETUP.md) |
 
 ### 10.3 Deployment Logs
 
@@ -372,6 +378,7 @@ SELECT pg_size_pretty(pg_total_relation_size('leads'));
 ## 12. Production Checklist
 
 - [ ] Environment variables configured in Vercel
+- [ ] OAuth redirect URIs updated to production domain (not localhost)
 - [ ] Supabase project created and migrated
 - [ ] Gemini API key active
 - [ ] Custom domain configured (optional)
