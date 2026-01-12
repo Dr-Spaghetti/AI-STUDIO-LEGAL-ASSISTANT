@@ -178,11 +178,13 @@ If approval is conditional, list conditions below:
 
 | Condition | Owner | Due Date | Status |
 |-----------|-------|----------|--------|
-| Enable uptime monitoring | DevOps | Before launch | ☐ |
-| Configure Sentry | Engineering | Launch +7 days | ☐ |
-| Test backup restore | DevOps | Launch +14 days | ☐ |
-| | | | ☐ |
-| | | | ☐ |
+| Enable uptime monitoring | DevOps | Before launch | ☑ Complete (MONITORING_SETUP.md) |
+| Configure Sentry | Engineering | Launch +7 days | ☑ Complete (lib/sentry.ts) |
+| Health check endpoint | Engineering | Before launch | ☑ Complete (api/health.ts) |
+| Rate limiting | Engineering | Before launch | ☑ Complete (api/middleware/rateLimit.ts) |
+| Staff authentication | Engineering | Before launch | ☑ Complete (lib/auth.ts, LoginPage.tsx) |
+| Voice customization | Engineering | Before launch | ☑ Complete (SettingsPanel.tsx enhanced) |
+| Test backup restore | DevOps | Launch +14 days | ☐ Pending |
 
 ---
 

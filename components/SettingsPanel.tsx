@@ -535,19 +535,61 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 placeholder="Sarah"
               />
             </FormGroup>
-            <FormGroup label="Voice Selection">
-              <select
-                value={settings.voiceName}
-                onChange={(e) => handleSettingsChange({ voiceName: e.target.value })}
-                className="form-input form-select"
-              >
-                <option value="Kore">Kore (Female, Professional)</option>
-                <option value="Aoede">Aoede (Female, Warm)</option>
-                <option value="Charon">Charon (Male, Deep)</option>
-                <option value="Fenrir">Fenrir (Male, Energetic)</option>
-                <option value="Puck">Puck (Neutral, Friendly)</option>
-              </select>
-            </FormGroup>
+
+            {/* Enhanced Voice Selection with Categories */}
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-white">Voice Selection</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[
+                  { value: 'Kore', name: 'Kore', gender: 'Female', style: 'Professional', description: 'Clear, confident voice ideal for legal settings' },
+                  { value: 'Aoede', name: 'Aoede', gender: 'Female', style: 'Warm', description: 'Friendly and approachable, great for client comfort' },
+                  { value: 'Leda', name: 'Leda', gender: 'Female', style: 'Calm', description: 'Soothing voice for sensitive conversations' },
+                  { value: 'Zephyr', name: 'Zephyr', gender: 'Female', style: 'Energetic', description: 'Upbeat and engaging for active intake' },
+                  { value: 'Charon', name: 'Charon', gender: 'Male', style: 'Deep', description: 'Authoritative presence for serious matters' },
+                  { value: 'Fenrir', name: 'Fenrir', gender: 'Male', style: 'Energetic', description: 'Dynamic voice for engaged conversations' },
+                  { value: 'Orus', name: 'Orus', gender: 'Male', style: 'Warm', description: 'Reassuring tone for anxious callers' },
+                  { value: 'Perseus', name: 'Perseus', gender: 'Male', style: 'Professional', description: 'Polished voice for corporate clients' },
+                  { value: 'Puck', name: 'Puck', gender: 'Neutral', style: 'Friendly', description: 'Inclusive voice suitable for all callers' },
+                  { value: 'Sage', name: 'Sage', gender: 'Neutral', style: 'Calm', description: 'Balanced voice for diverse clientele' },
+                ].map((voice) => (
+                  <div
+                    key={voice.value}
+                    onClick={() => handleSettingsChange({ voiceName: voice.value })}
+                    className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                      settings.voiceName === voice.value
+                        ? 'border-[var(--primary-accent)] bg-[rgba(var(--primary-accent-rgb),0.1)]'
+                        : 'border-[#2D3139] bg-[#16181D] hover:border-[#3D4149]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-white">{voice.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          voice.gender === 'Female' ? 'bg-pink-500/20 text-pink-400' :
+                          voice.gender === 'Male' ? 'bg-blue-500/20 text-blue-400' :
+                          'bg-purple-500/20 text-purple-400'
+                        }`}>
+                          {voice.gender}
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-[#2D3139] text-[#9CA3AF]">
+                          {voice.style}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-[#6B7280]">{voice.description}</p>
+                    {settings.voiceName === voice.value && (
+                      <div className="mt-2 flex items-center gap-1 text-xs" style={{ color: 'var(--primary-accent)' }}>
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        Selected
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <FormGroup label="Voice Tone">
               <select
                 value={settings.tone}
@@ -558,8 +600,25 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 <option value="Friendly and Casual">Friendly and Casual</option>
                 <option value="Formal and Direct">Formal and Direct</option>
                 <option value="Warm and Reassuring">Warm and Reassuring</option>
+                <option value="Calm and Patient">Calm and Patient</option>
+                <option value="Confident and Authoritative">Confident and Authoritative</option>
               </select>
             </FormGroup>
+
+            <FormGroup label="Language Style" hint="How the AI should speak">
+              <select
+                value={settings.languageStyle}
+                onChange={(e) => handleSettingsChange({ languageStyle: e.target.value })}
+                className="form-input form-select"
+              >
+                <option value="calm, clear, and natural human voice">Calm, clear, and natural</option>
+                <option value="warm, conversational, and reassuring">Warm and conversational</option>
+                <option value="professional, articulate, and precise">Professional and precise</option>
+                <option value="friendly, approachable, and supportive">Friendly and supportive</option>
+                <option value="empathetic, understanding, and patient">Empathetic and patient</option>
+              </select>
+            </FormGroup>
+
             <FormGroup label="Opening Line" hint="The first thing the AI says when answering">
               <textarea
                 value={settings.openingLine}

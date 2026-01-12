@@ -20,7 +20,9 @@ This guide provides step-by-step test scenarios for stakeholders to validate the
 - Stable internet connection
 
 **Test Account:**
-- No login required (single-tenant demo mode)
+- Demo mode: No login required by default
+- To test with login: Set `requireAuth=true` in localStorage
+- Staff login available with demo credentials (any email/password in demo mode)
 - Settings persist in your browser's localStorage
 
 ---

@@ -17,7 +17,9 @@ import { FullPageLoader } from './components/LoadingIndicator';
 import ConsentModal, { ConsentData } from './components/ConsentModal';
 import AIDisclaimerBanner from './components/AIDisclaimerBanner';
 import ThemeProvider from './components/ThemeProvider';
+import LoginPage from './components/LoginPage';
 import { initSentry, captureException, setUser } from './lib/sentry';
+import { getCurrentUser, logout, type User } from './lib/auth';
 
 // Initialize Sentry for error tracking
 initSentry();
@@ -71,6 +73,42 @@ const DEFAULT_SETTINGS: ReceptionistSettings = {
 };
 
 const App: React.FC = () => {
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [requireAuth, setRequireAuth] = useState(() => {
+    // Check if auth is required (can be configured per tenant)
+    const authRequired = localStorage.getItem('requireAuth');
+    return authRequired === 'true';
+  });
+
+  // Check for existing session on mount
+  useEffect(() => {
+    async function checkAuth() {
+      const user = await getCurrentUser();
+      if (user) {
+        setCurrentUser(user);
+        // Set user context in Sentry
+        setUser({ id: user.id, email: user.email, tenantId: user.tenantId });
+      }
+      setAuthLoading(false);
+    }
+    checkAuth();
+  }, []);
+
+  // Handle login
+  const handleLogin = useCallback((user: User) => {
+    setCurrentUser(user);
+    setUser({ id: user.id, email: user.email, tenantId: user.tenantId });
+  }, []);
+
+  // Handle logout
+  const handleLogout = useCallback(async () => {
+    await logout();
+    setCurrentUser(null);
+    setUser(undefined);
+  }, []);
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [callState, setCallState] = useState<CallState>(CallState.IDLE);
   const [clientInfo, setClientInfo] = useState<Partial<ClientInfo>>({});
@@ -499,6 +537,39 @@ const App: React.FC = () => {
     return () => cleanup();
   }, [cleanup]);
 
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <ThemeProvider settings={settings}>
+        <div className="flex items-center justify-center h-screen w-full bg-[#050505]">
+          <div className="flex flex-col items-center gap-4">
+            <svg className="w-12 h-12 animate-spin" style={{ color: 'var(--primary-accent, #00FFC8)' }} fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-[#6B7280]">Loading...</span>
+          </div>
+        </div>
+      </ThemeProvider>
+    );
+  }
+
+  // Show login page if auth is required and user is not logged in
+  if (requireAuth && !currentUser) {
+    return (
+      <ThemeProvider settings={settings}>
+        <LoginPage
+          onLogin={handleLogin}
+          branding={{
+            firmName: settings.firmName,
+            logoUrl: settings.brandLogoUrl,
+            primaryColor: settings.brandPrimaryColor,
+          }}
+        />
+      </ThemeProvider>
+    );
+  }
+
   return (
     <ThemeProvider settings={settings}>
     <div className="flex flex-col h-screen w-full bg-[#050505] text-white overflow-hidden">
@@ -529,7 +600,12 @@ const App: React.FC = () => {
           )}
 
           {/* Sidebar */}
-          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            user={currentUser}
+            onLogout={handleLogout}
+          />
 
         {/* Main Content Area - Conditional Rendering Based on Active Tab */}
         <main className="flex-1 flex flex-col p-8 overflow-hidden relative">

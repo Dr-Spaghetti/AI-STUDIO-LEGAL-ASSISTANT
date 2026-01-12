@@ -1,11 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'staff' | 'viewer';
+  avatarUrl?: string;
+}
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  user?: User | null;
+  onLogout?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogout }) => {
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'grid' },
     { id: 'analytics', label: 'Analytics', icon: 'bar-chart' },
@@ -69,29 +80,73 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
       </nav>
 
       {/* User/Footer Area */}
-      <div className="p-6 border-t border-[#1E2128]">
-          <div className="flex items-center gap-3">
+      <div className="p-6 border-t border-[#1E2128] relative">
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => setShowUserMenu(!showUserMenu)}
+          >
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-sm"
                 style={{
                   background: `linear-gradient(to bottom right, var(--primary-accent, #00FFC8), color-mix(in srgb, var(--primary-accent, #00FFC8) 60%, black))`
                 }}
               >
-                  TL
+                  {user ? user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'TL'}
               </div>
-              <div>
-                  <p className="text-sm text-white font-medium">Ted Law Admin</p>
-                  <button
-                    onClick={() => setActiveTab('settings')}
-                    className="text-xs text-gray-500 transition-colors hover:opacity-80"
-                    style={{ '--hover-color': 'var(--primary-accent, #00FFC8)' } as React.CSSProperties}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-accent, #00FFC8)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = ''}
-                  >
-                    View Profile
-                  </button>
+              <div className="flex-1">
+                  <p className="text-sm text-white font-medium">{user?.name || 'Staff User'}</p>
+                  <p className="text-xs text-gray-500">{user?.email || 'View Profile'}</p>
               </div>
+              <svg className={`w-4 h-4 text-gray-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
           </div>
+
+          {/* User Menu Dropdown */}
+          {showUserMenu && (
+            <div className="absolute bottom-full left-4 right-4 mb-2 bg-[#1A1D24] border border-[#2D3139] rounded-lg shadow-lg overflow-hidden">
+              <button
+                onClick={() => {
+                  setActiveTab('settings');
+                  setShowUserMenu(false);
+                }}
+                className="w-full px-4 py-3 text-left text-sm text-[#9CA3AF] hover:bg-[#2D3139] hover:text-white flex items-center gap-3"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Profile Settings
+              </button>
+              {user?.role === 'admin' && (
+                <button
+                  onClick={() => {
+                    setActiveTab('settings');
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-[#9CA3AF] hover:bg-[#2D3139] hover:text-white flex items-center gap-3"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Team Management
+                </button>
+              )}
+              {onLogout && (
+                <button
+                  onClick={() => {
+                    onLogout();
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-3 border-t border-[#2D3139]"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  Sign Out
+                </button>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );
