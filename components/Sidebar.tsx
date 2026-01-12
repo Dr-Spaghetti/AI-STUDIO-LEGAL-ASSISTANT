@@ -8,14 +8,24 @@ interface User {
   avatarUrl?: string;
 }
 
+interface Settings {
+  firmName?: string;
+  logoUrl?: string;
+  brandPrimaryColor?: string;
+}
+
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   user?: User | null;
   onLogout?: () => void;
+  settings?: Settings;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogout, settings }) => {
+  const firmName = settings?.firmName || 'TED LAW FIRM';
+  const logoUrl = settings?.logoUrl;
+  const primaryColor = settings?.brandPrimaryColor || '#00FFC8';
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'grid' },
@@ -30,25 +40,35 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogo
     <div className="w-64 bg-[#050505] border-r border-[#1E2128] flex flex-col h-full shrink-0">
       {/* Logo Area */}
       <div className="h-20 flex items-center px-6 border-b border-[#1E2128]">
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center mr-3"
-          style={{
-            backgroundColor: 'var(--primary-accent, #00FFC8)1a',
-            border: '1px solid var(--primary-accent, #00FFC8)'
-          }}
-        >
-          <svg
-            className="w-6 h-6"
-            style={{ color: 'var(--primary-accent, #00FFC8)' }}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt={firmName}
+            className="h-10 max-w-[140px] object-contain mr-3"
+          />
+        ) : (
+          <div
+            className="w-10 h-10 rounded-lg flex items-center justify-center mr-3"
+            style={{
+              backgroundColor: `${primaryColor}1a`,
+              border: `1px solid ${primaryColor}`
+            }}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-          </svg>
-        </div>
-        <div>
-          <h1 className="text-white font-bold text-base tracking-wider">TED LAW FIRM</h1>
+            <svg
+              className="w-6 h-6"
+              style={{ color: primaryColor }}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+            </svg>
+          </div>
+        )}
+        <div className={logoUrl ? 'hidden' : ''}>
+          <h1 className="text-white font-bold text-base tracking-wider" style={{ maxWidth: '140px' }}>
+            {firmName.toUpperCase()}
+          </h1>
           <p className="text-xs text-gray-500 font-medium tracking-widest">AI RECEPTIONIST</p>
         </div>
       </div>

@@ -605,6 +605,7 @@ const App: React.FC = () => {
             setActiveTab={setActiveTab}
             user={currentUser}
             onLogout={handleLogout}
+            settings={settings}
           />
 
         {/* Main Content Area - Conditional Rendering Based on Active Tab */}
