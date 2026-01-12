@@ -1,5 +1,22 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { ReceptionistSettings, Employee } from '../types';
+
+// Debounce hook to prevent excessive updates
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 interface SettingsPanelProps {
   settings: ReceptionistSettings;
@@ -62,6 +79,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Local state for text inputs to prevent focus loss
+  const [localSettings, setLocalSettings] = useState<ReceptionistSettings>(settings);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync local state when parent settings change (e.g., from other sources)
+  useEffect(() => {
+    setLocalSettings(settings);
+  }, [settings]);
+
   // Graph settings state
   const [graphSettings, setGraphSettings] = useState({
     showWeeklyTrends: true,
@@ -71,9 +97,25 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
     chartColorTheme: 'cyan'
   });
 
-  // Handle settings update with save feedback
+  // Handle local changes without triggering parent re-render
+  const handleLocalChange = useCallback((updates: Partial<ReceptionistSettings>) => {
+    setLocalSettings(prev => ({ ...prev, ...updates }));
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce the save to parent
+    saveTimeoutRef.current = setTimeout(() => {
+      setSettings({ ...localSettings, ...updates });
+    }, 500);
+  }, [localSettings, setSettings]);
+
+  // Handle immediate settings update (for toggles, selects, etc.)
   const handleSettingsChange = useCallback((updates: Partial<ReceptionistSettings>) => {
-    const newSettings = { ...settings, ...updates };
+    const newSettings = { ...localSettings, ...updates };
+    setLocalSettings(newSettings);
     setSettings(newSettings);
 
     // Show save feedback
@@ -82,7 +124,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
       setIsSaving(false);
       setToast({ message: 'Settings saved successfully', type: 'success' });
     }, 300);
-  }, [settings, setSettings]);
+  }, [localSettings, setSettings]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle logo file upload
   const handleLogoUpload = useCallback((file: File) => {
@@ -233,8 +284,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Firm Name">
               <input
                 type="text"
-                value={settings.firmName}
-                onChange={(e) => handleSettingsChange({ firmName: e.target.value })}
+                value={localSettings.firmName}
+                onChange={(e) => handleLocalChange({ firmName: e.target.value })}
                 className="form-input"
                 placeholder="Enter your firm name"
               />
@@ -318,14 +369,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 <div className="flex gap-3">
                   <input
                     type="color"
-                    value={settings.brandPrimaryColor || '#00FFC8'}
-                    onChange={(e) => handleSettingsChange({ brandPrimaryColor: e.target.value })}
+                    value={localSettings.brandPrimaryColor || '#00FFC8'}
+                    onChange={(e) => handleLocalChange({ brandPrimaryColor: e.target.value })}
                     className="w-14 h-[46px] rounded-lg border border-[#2D3139] cursor-pointer bg-transparent p-1"
                   />
                   <input
                     type="text"
-                    value={settings.brandPrimaryColor || '#00FFC8'}
-                    onChange={(e) => handleSettingsChange({ brandPrimaryColor: e.target.value })}
+                    value={localSettings.brandPrimaryColor || '#00FFC8'}
+                    onChange={(e) => handleLocalChange({ brandPrimaryColor: e.target.value })}
                     className="form-input flex-1"
                   />
                 </div>
@@ -334,14 +385,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 <div className="flex gap-3">
                   <input
                     type="color"
-                    value={settings.brandSecondaryColor || '#1A1D24'}
-                    onChange={(e) => handleSettingsChange({ brandSecondaryColor: e.target.value })}
+                    value={localSettings.brandSecondaryColor || '#1A1D24'}
+                    onChange={(e) => handleLocalChange({ brandSecondaryColor: e.target.value })}
                     className="w-14 h-[46px] rounded-lg border border-[#2D3139] cursor-pointer bg-transparent p-1"
                   />
                   <input
                     type="text"
-                    value={settings.brandSecondaryColor || '#1A1D24'}
-                    onChange={(e) => handleSettingsChange({ brandSecondaryColor: e.target.value })}
+                    value={localSettings.brandSecondaryColor || '#1A1D24'}
+                    onChange={(e) => handleLocalChange({ brandSecondaryColor: e.target.value })}
                     className="form-input flex-1"
                   />
                 </div>
@@ -354,26 +405,26 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               <div
                 className="p-4 rounded-lg border"
                 style={{
-                  backgroundColor: settings.brandSecondaryColor || '#1A1D24',
-                  borderColor: settings.brandPrimaryColor || '#00FFC8'
+                  backgroundColor: localSettings.brandSecondaryColor || '#1A1D24',
+                  borderColor: localSettings.brandPrimaryColor || '#00FFC8'
                 }}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  {settings.logoUrl ? (
-                    <img src={settings.logoUrl} alt="Logo" className="h-8 object-contain" />
+                  {localSettings.logoUrl ? (
+                    <img src={localSettings.logoUrl} alt="Logo" className="h-8 object-contain" />
                   ) : (
                     <div
                       className="font-bold text-lg"
-                      style={{ color: settings.brandPrimaryColor || '#00FFC8' }}
+                      style={{ color: localSettings.brandPrimaryColor || '#00FFC8' }}
                     >
-                      {settings.firmName || 'Your Firm Name'}
+                      {localSettings.firmName || 'Your Firm Name'}
                     </div>
                   )}
                 </div>
                 <button
                   className="px-4 py-2 rounded-lg font-medium text-sm"
                   style={{
-                    backgroundColor: settings.brandPrimaryColor || '#00FFC8',
+                    backgroundColor: localSettings.brandPrimaryColor || '#00FFC8',
                     color: '#000'
                   }}
                 >
@@ -529,8 +580,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="AI Assistant Name">
               <input
                 type="text"
-                value={settings.aiName}
-                onChange={(e) => handleSettingsChange({ aiName: e.target.value })}
+                value={localSettings.aiName}
+                onChange={(e) => handleLocalChange({ aiName: e.target.value })}
                 className="form-input"
                 placeholder="Sarah"
               />
@@ -554,9 +605,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 ].map((voice) => (
                   <div
                     key={voice.value}
-                    onClick={() => handleSettingsChange({ voiceName: voice.value })}
+                    onClick={() => handleLocalChange({ voiceName: voice.value })}
                     className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                      settings.voiceName === voice.value
+                      localSettings.voiceName === voice.value
                         ? 'border-[var(--primary-accent)] bg-[rgba(var(--primary-accent-rgb),0.1)]'
                         : 'border-[#2D3139] bg-[#16181D] hover:border-[#3D4149]'
                     }`}
@@ -577,7 +628,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                       </div>
                     </div>
                     <p className="text-xs text-[#6B7280]">{voice.description}</p>
-                    {settings.voiceName === voice.value && (
+                    {localSettings.voiceName === voice.value && (
                       <div className="mt-2 flex items-center gap-1 text-xs" style={{ color: 'var(--primary-accent)' }}>
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -621,16 +672,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
             <FormGroup label="Opening Line" hint="The first thing the AI says when answering">
               <textarea
-                value={settings.openingLine}
-                onChange={(e) => handleSettingsChange({ openingLine: e.target.value })}
+                value={localSettings.openingLine}
+                onChange={(e) => handleLocalChange({ openingLine: e.target.value })}
                 className="form-input h-24 resize-none"
                 placeholder="Hi, thank you for calling..."
               />
             </FormGroup>
             <FormGroup label="Closing Line" hint="The message before ending the call">
               <textarea
-                value={settings.closingLine || ''}
-                onChange={(e) => handleSettingsChange({ closingLine: e.target.value })}
+                value={localSettings.closingLine || ''}
+                onChange={(e) => handleLocalChange({ closingLine: e.target.value })}
                 className="form-input h-24 resize-none"
                 placeholder="Thank you for calling. Have a great day!"
               />
@@ -643,8 +694,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
           <div className="space-y-6">
             <FormGroup label="Firm Bio / Context" hint="Background information the AI uses to answer questions">
               <textarea
-                value={settings.firmBio}
-                onChange={(e) => handleSettingsChange({ firmBio: e.target.value })}
+                value={localSettings.firmBio}
+                onChange={(e) => handleLocalChange({ firmBio: e.target.value })}
                 className="form-input h-32 resize-none"
                 placeholder="Describe your firm..."
               />
@@ -652,16 +703,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Response Delay (milliseconds)" hint="Add a slight pause to make responses feel more natural">
               <input
                 type="number"
-                value={settings.responseDelay}
-                onChange={(e) => handleSettingsChange({ responseDelay: parseInt(e.target.value) || 0 })}
+                value={localSettings.responseDelay}
+                onChange={(e) => handleLocalChange({ responseDelay: parseInt(e.target.value) || 0 })}
                 className="form-input"
                 placeholder="0"
               />
             </FormGroup>
             <FormGroup label="Urgency Keywords" hint="Comma-separated words that trigger urgent case flagging">
               <textarea
-                value={settings.urgencyKeywords.join(', ')}
-                onChange={(e) => handleSettingsChange({ urgencyKeywords: e.target.value.split(',').map(k => k.trim()).filter(k => k) })}
+                value={localSettings.urgencyKeywords.join(', ')}
+                onChange={(e) => handleLocalChange({ urgencyKeywords: e.target.value.split(',').map(k => k.trim()).filter(k => k) })}
                 className="form-input h-20 resize-none"
                 placeholder="court date, deadline, arrested, emergency"
               />
@@ -696,12 +747,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               label="Call Transfer"
               description="Allow AI to transfer calls to live staff when needed"
             />
-            {settings.callTransferEnabled && (
+            {localSettings.callTransferEnabled && (
               <FormGroup label="Transfer Phone Number">
                 <input
                   type="tel"
-                  value={settings.transferNumber || ''}
-                  onChange={(e) => handleSettingsChange({ transferNumber: e.target.value })}
+                  value={localSettings.transferNumber || ''}
+                  onChange={(e) => handleLocalChange({ transferNumber: e.target.value })}
                   className="form-input"
                   placeholder="+1 (555) 123-4567"
                 />
@@ -710,8 +761,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Max Call Duration (minutes)">
               <input
                 type="number"
-                value={settings.maxCallDuration || 30}
-                onChange={(e) => handleSettingsChange({ maxCallDuration: parseInt(e.target.value) || 30 })}
+                value={localSettings.maxCallDuration || 30}
+                onChange={(e) => handleLocalChange({ maxCallDuration: parseInt(e.target.value) || 30 })}
                 className="form-input"
               />
             </FormGroup>
@@ -780,12 +831,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               label="Email Notifications"
               description="Receive email alerts for new client intakes"
             />
-            {settings.emailNotifications && (
+            {localSettings.emailNotifications && (
               <FormGroup label="Notification Email">
                 <input
                   type="email"
-                  value={settings.notificationEmail || ''}
-                  onChange={(e) => handleSettingsChange({ notificationEmail: e.target.value })}
+                  value={localSettings.notificationEmail || ''}
+                  onChange={(e) => handleLocalChange({ notificationEmail: e.target.value })}
                   className="form-input"
                   placeholder="alerts@yourfirm.com"
                 />
@@ -797,12 +848,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               label="SMS Notifications"
               description="Receive text messages for urgent cases"
             />
-            {settings.smsNotifications && (
+            {localSettings.smsNotifications && (
               <FormGroup label="Notification Phone">
                 <input
                   type="tel"
-                  value={settings.notificationPhone || ''}
-                  onChange={(e) => handleSettingsChange({ notificationPhone: e.target.value })}
+                  value={localSettings.notificationPhone || ''}
+                  onChange={(e) => handleLocalChange({ notificationPhone: e.target.value })}
                   className="form-input"
                   placeholder="+1 (555) 123-4567"
                 />
@@ -887,11 +938,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               label="Legal Disclaimer"
               description="Auto-insert legal disclaimer at the start of calls"
             />
-            {settings.legalDisclaimer && (
+            {localSettings.legalDisclaimer && (
               <FormGroup label="Disclaimer Text">
                 <textarea
-                  value={settings.disclaimerText || ''}
-                  onChange={(e) => handleSettingsChange({ disclaimerText: e.target.value })}
+                  value={localSettings.disclaimerText || ''}
+                  onChange={(e) => handleLocalChange({ disclaimerText: e.target.value })}
                   className="form-input h-24 resize-none"
                   placeholder="This call may be recorded..."
                 />
@@ -906,8 +957,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Data Retention (days)">
               <input
                 type="number"
-                value={settings.dataRetentionDays || 365}
-                onChange={(e) => handleSettingsChange({ dataRetentionDays: parseInt(e.target.value) || 365 })}
+                value={localSettings.dataRetentionDays || 365}
+                onChange={(e) => handleLocalChange({ dataRetentionDays: parseInt(e.target.value) || 365 })}
                 className="form-input"
               />
             </FormGroup>
@@ -1039,8 +1090,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Admin Email">
               <input
                 type="email"
-                value={settings.adminEmail || ''}
-                onChange={(e) => handleSettingsChange({ adminEmail: e.target.value })}
+                value={localSettings.adminEmail || ''}
+                onChange={(e) => handleLocalChange({ adminEmail: e.target.value })}
                 className="form-input"
                 placeholder="admin@yourfirm.com"
               />
