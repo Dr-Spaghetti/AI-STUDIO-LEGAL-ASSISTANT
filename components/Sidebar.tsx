@@ -44,11 +44,11 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogo
           <img
             src={logoUrl}
             alt={firmName}
-            className="h-10 max-w-[140px] object-contain mr-3"
+            className="h-10 w-10 object-contain mr-3 rounded-lg shrink-0"
           />
         ) : (
           <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center mr-3"
+            className="w-10 h-10 rounded-lg flex items-center justify-center mr-3 shrink-0"
             style={{
               backgroundColor: `${primaryColor}1a`,
               border: `1px solid ${primaryColor}`
@@ -65,8 +65,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogo
             </svg>
           </div>
         )}
-        <div className={logoUrl ? 'hidden' : ''}>
-          <h1 className="text-white font-bold text-base tracking-wider" style={{ maxWidth: '140px' }}>
+        <div className="min-w-0">
+          <h1 className="text-white font-bold text-sm tracking-wider truncate">
             {firmName.toUpperCase()}
           </h1>
           <p className="text-xs text-gray-500 font-medium tracking-widest">AI RECEPTIONIST</p>
