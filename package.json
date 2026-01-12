@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "validate": "npx ts-node scripts/validate-launch.ts",
+    "typecheck": "tsc --noEmit",
     "db:generate": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > lib/database.types.ts"
   },
   "dependencies": {
@@ -14,6 +16,7 @@
     "react-dom": "^19.2.0",
     "@google/genai": "^1.28.0",
     "@supabase/supabase-js": "^2.45.0",
+    "lucide-react": "^0.400.0",
     "marked": "^16.4.1",
     "uuid": "^10.0.0",
     "date-fns": "^3.6.0",
@@ -22,6 +25,7 @@
   "devDependencies": {
     "@types/node": "^22.14.0",
     "@types/uuid": "^10.0.0",
+    "@vercel/node": "^3.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",

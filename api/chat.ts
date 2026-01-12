@@ -8,6 +8,7 @@
 // 4. Generate structured lead output
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { applyRateLimit, RateLimitConfigs } from './middleware/rateLimit';
 
 // Types
 interface ChatMessage {
@@ -132,6 +133,11 @@ export default async function handler(
 
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  // Apply rate limiting for AI endpoints
+  if (!applyRateLimit(req, res, RateLimitConfigs.ai)) {
     return;
   }
 

@@ -12,8 +12,14 @@ const StatusBar = () => {
       return () => clearTimeout(timer);
     }, []);
     return (
-      <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-lg shadow-lg bg-[#1A1D24] border border-[#00FFC8]/30 text-white">
-        <svg className="w-4 h-4 text-[#00FFC8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-lg shadow-lg text-white"
+        style={{
+          backgroundColor: '#1A1D24',
+          border: '1px solid rgba(var(--primary-accent-rgb, 0, 255, 200), 0.3)'
+        }}
+      >
+        <svg className="w-4 h-4" style={{ color: 'var(--primary-accent, #00FFC8)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
         <span className="text-sm font-medium">{message}</span>
@@ -41,14 +47,29 @@ const StatusBar = () => {
     <>
       <div className="h-16 mt-6 glass-panel rounded-2xl flex items-center justify-between px-6 shrink-0 relative overflow-hidden">
           {/* Decorative Glow Line */}
-          <div className="absolute top-0 left-10 right-10 h-[1px] bg-gradient-to-r from-transparent via-[#00FFC8] to-transparent opacity-30"></div>
+          <div
+            className="absolute top-0 left-10 right-10 h-[1px] opacity-30"
+            style={{ background: 'linear-gradient(to right, transparent, var(--primary-accent, #00FFC8), transparent)' }}
+          ></div>
 
           <div className="flex items-center gap-6">
               <h3 className="text-sm font-bold text-gray-400 tracking-wide uppercase mr-4">System Status & Settings</h3>
 
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00FFC8]/10 border border-[#00FFC8]/30">
-                  <div className="w-2 h-2 rounded-full bg-[#00FFC8] shadow-[0_0_8px_#00FFC8]"></div>
-                  <span className="text-xs font-bold text-[#00FFC8] uppercase tracking-wider">System Ready</span>
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{
+                  backgroundColor: 'rgba(var(--primary-accent-rgb, 0, 255, 200), 0.1)',
+                  border: '1px solid rgba(var(--primary-accent-rgb, 0, 255, 200), 0.3)'
+                }}
+              >
+                  <div
+                    className="w-2 h-2 rounded-full"
+                    style={{
+                      backgroundColor: 'var(--primary-accent, #00FFC8)',
+                      boxShadow: '0 0 8px var(--primary-accent, #00FFC8)'
+                    }}
+                  ></div>
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--primary-accent, #00FFC8)' }}>System Ready</span>
               </div>
 
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1E2128] border border-[#2D3139]">
@@ -62,11 +83,15 @@ const StatusBar = () => {
                    <span className="text-xs font-medium text-gray-400 uppercase">AI Persona</span>
                    <div
                      onClick={toggleAiPersona}
-                     className={`w-12 h-6 rounded-full p-1 cursor-pointer flex transition-all duration-200 ${
-                       aiPersonaEnabled
-                         ? 'bg-[#00FFC8] justify-end shadow-[0_0_10px_rgba(0,255,163,0.3)]'
-                         : 'bg-[#2D3139] justify-start'
-                     }`}
+                     className="w-12 h-6 rounded-full p-1 cursor-pointer flex transition-all duration-200"
+                     style={aiPersonaEnabled ? {
+                       backgroundColor: 'var(--primary-accent, #00FFC8)',
+                       justifyContent: 'flex-end',
+                       boxShadow: '0 0 10px rgba(var(--primary-accent-rgb, 0, 255, 200), 0.3)'
+                     } : {
+                       backgroundColor: '#2D3139',
+                       justifyContent: 'flex-start'
+                     }}
                    >
                        <div className={`w-4 h-4 rounded-full shadow-sm transition-colors ${
                          aiPersonaEnabled ? 'bg-white' : 'bg-gray-500'
@@ -78,11 +103,15 @@ const StatusBar = () => {
                    <span className="text-xs font-medium text-gray-400 uppercase">Privacy Mode</span>
                    <div
                      onClick={togglePrivacyMode}
-                     className={`w-12 h-6 rounded-full p-1 cursor-pointer flex transition-all duration-200 ${
-                       privacyModeEnabled
-                         ? 'bg-[#00FFC8] justify-end shadow-[0_0_10px_rgba(0,255,163,0.3)]'
-                         : 'bg-[#2D3139] justify-start'
-                     }`}
+                     className="w-12 h-6 rounded-full p-1 cursor-pointer flex transition-all duration-200"
+                     style={privacyModeEnabled ? {
+                       backgroundColor: 'var(--primary-accent, #00FFC8)',
+                       justifyContent: 'flex-end',
+                       boxShadow: '0 0 10px rgba(var(--primary-accent-rgb, 0, 255, 200), 0.3)'
+                     } : {
+                       backgroundColor: '#2D3139',
+                       justifyContent: 'flex-start'
+                     }}
                    >
                        <div className={`w-4 h-4 rounded-full shadow-sm transition-colors ${
                          privacyModeEnabled ? 'bg-white' : 'bg-gray-500'

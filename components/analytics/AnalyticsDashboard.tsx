@@ -108,7 +108,7 @@ const MOCK_LEADS_BY_STATUS: LeadsByStatus[] = [
   { status: 'Contacted', count: 58, color: '#F59E0B' },
   { status: 'Qualified', count: 67, color: '#10B981' },
   { status: 'Appointment Set', count: 45, color: '#8B5CF6' },
-  { status: 'Retained', count: 23, color: '#00FFC8' },
+  { status: 'Retained', count: 23, color: 'var(--primary-accent, #00FFC8)' },
   { status: 'Lost', count: 12, color: '#6B7280' },
 ];
 
@@ -352,7 +352,7 @@ export function AnalyticsDashboard() {
                   cy="64"
                   r="56"
                   fill="none"
-                  stroke="#00FFC8"
+                  stroke="var(--primary-accent, #00FFC8)"
                   strokeWidth="12"
                   strokeDasharray={`${0.82 * 352} 352`}
                   strokeLinecap="round"

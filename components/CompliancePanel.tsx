@@ -238,7 +238,7 @@ const CompliancePanel: React.FC = () => {
           {complianceState.auditLoggingEnabled && (
             <button
               onClick={handleExportAuditLog}
-              className="mt-4 px-4 py-2.5 bg-[#0F1115] border border-[#2D3139] rounded-lg text-[14px] text-white font-medium hover:border-[#00FFC8]/50 transition flex items-center gap-2"
+              className="mt-4 px-4 py-2.5 bg-[#0F1115] border border-[#2D3139] rounded-lg text-[14px] text-white font-medium hover-border-accent transition flex items-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -281,8 +281,8 @@ const CompliancePanel: React.FC = () => {
         {/* Data Security */}
         <div className="workflow-card">
           <div className="flex items-center gap-4 mb-5">
-            <div className="w-12 h-12 rounded-xl bg-[#00FFC8]/10 border border-[#00FFC8]/30 flex items-center justify-center">
-              <svg className="w-6 h-6 text-[#00FFC8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <div className="w-12 h-12 rounded-xl icon-container-primary flex items-center justify-center">
+              <svg className="w-6 h-6 icon-active" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>
             </div>
@@ -294,15 +294,15 @@ const CompliancePanel: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between p-3 bg-[#0F1115] rounded-lg border border-[#2D3139]">
               <span className="text-[14px] text-[#9CA3AF]">Data Encryption</span>
-              <span className="text-[14px] text-[#00FFC8] font-semibold">AES-256</span>
+              <span className="text-[14px] font-semibold icon-active">AES-256</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-[#0F1115] rounded-lg border border-[#2D3139]">
               <span className="text-[14px] text-[#9CA3AF]">Authentication</span>
-              <span className="text-[14px] text-[#00FFC8] font-semibold">OAuth 2.0</span>
+              <span className="text-[14px] font-semibold icon-active">OAuth 2.0</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-[#0F1115] rounded-lg border border-[#2D3139]">
               <span className="text-[14px] text-[#9CA3AF]">TLS Version</span>
-              <span className="text-[14px] text-[#00FFC8] font-semibold">TLS 1.3</span>
+              <span className="text-[14px] font-semibold icon-active">TLS 1.3</span>
             </div>
           </div>
         </div>
@@ -331,7 +331,7 @@ const CompliancePanel: React.FC = () => {
           <button
             onClick={handleSaveDisclosure}
             disabled={isSaving}
-            className="px-5 py-2.5 bg-[#00FFC8] text-black text-[14px] font-semibold rounded-lg hover:bg-[#00FFC8]/90 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2.5 btn-primary text-black text-[14px] font-semibold rounded-lg transition disabled:opacity-50 flex items-center gap-2"
           >
             {isSaving && (
               <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
