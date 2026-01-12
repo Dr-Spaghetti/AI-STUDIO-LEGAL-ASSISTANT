@@ -38,24 +38,24 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogo
 
   return (
     <div className="w-64 bg-[#050505] border-r border-[#1E2128] flex flex-col h-full shrink-0">
-      {/* Logo Area */}
-      <div className="h-20 flex items-center px-6 border-b border-[#1E2128]">
+      {/* Logo Area - Auto-resizing for logo and firm name */}
+      <div className="h-20 flex items-center px-4 border-b border-[#1E2128] gap-3">
         {logoUrl ? (
           <img
             src={logoUrl}
             alt={firmName}
-            className="h-10 w-10 object-contain mr-3 rounded-lg shrink-0"
+            className="h-9 w-9 min-w-[36px] object-contain rounded-lg shrink-0"
           />
         ) : (
           <div
-            className="w-10 h-10 rounded-lg flex items-center justify-center mr-3 shrink-0"
+            className="w-9 h-9 min-w-[36px] rounded-lg flex items-center justify-center shrink-0"
             style={{
               backgroundColor: `${primaryColor}1a`,
               border: `1px solid ${primaryColor}`
             }}
           >
             <svg
-              className="w-6 h-6"
+              className="w-5 h-5"
               style={{ color: primaryColor }}
               fill="none"
               viewBox="0 0 24 24"
@@ -65,11 +65,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogo
             </svg>
           </div>
         )}
-        <div className="min-w-0">
-          <h1 className="text-white font-bold text-sm tracking-wider truncate">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <h1
+            className="text-white font-bold tracking-wide truncate leading-tight"
+            style={{
+              fontSize: firmName.length > 15 ? '11px' : firmName.length > 10 ? '12px' : '13px'
+            }}
+          >
             {firmName.toUpperCase()}
           </h1>
-          <p className="text-xs text-gray-500 font-medium tracking-widest">AI RECEPTIONIST</p>
+          <p className="text-[10px] text-gray-500 font-medium tracking-widest mt-0.5">AI RECEPTIONIST</p>
         </div>
       </div>
 
