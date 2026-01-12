@@ -83,19 +83,27 @@ VITE_ENABLE_VOICE=true
 VITE_ENABLE_EMERGENCY_DETECTION=true
 ```
 
-### OAuth Integrations (Server-side)
+### OAuth Integrations
 
 ```bash
 # Calendly OAuth
+# Client-side (required for OAuth button to work)
+VITE_CALENDLY_CLIENT_ID=your_calendly_client_id
+# Server-side (for secure token exchange)
 CALENDLY_CLIENT_ID=your_calendly_client_id
 CALENDLY_CLIENT_SECRET=your_calendly_client_secret
 CALENDLY_REDIRECT_URI=https://YOUR-PROJECT.vercel.app/api/integrations/calendly/callback
 
 # Clio OAuth
+# Client-side (required for OAuth button to work)
+VITE_CLIO_CLIENT_ID=your_clio_client_id
+# Server-side (for secure token exchange)
 CLIO_CLIENT_ID=your_clio_client_id
 CLIO_CLIENT_SECRET=your_clio_client_secret
 CLIO_REDIRECT_URI=https://YOUR-PROJECT.vercel.app/api/integrations/clio/callback
 ```
+
+> **Note:** The `VITE_` prefixed variables are exposed to the browser and used to initiate the OAuth flow. The non-prefixed versions are kept secret on the server for token exchange.
 
 ### Optional Integrations
 
