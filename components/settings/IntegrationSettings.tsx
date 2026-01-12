@@ -60,7 +60,15 @@ interface Props {
 // INTEGRATION CONFIGS
 // ============================================
 
-const INTEGRATIONS: IntegrationConfig[] = [
+// Check which integrations have credentials configured
+const INTEGRATION_ENV_CHECKS: Record<string, boolean> = {
+  calendly: Boolean(import.meta.env.VITE_CALENDLY_CLIENT_ID),
+  clio: Boolean(import.meta.env.VITE_CLIO_CLIENT_ID),
+  twilio: Boolean(import.meta.env.VITE_TWILIO_CONFIGURED), // Optional flag
+  sendgrid: Boolean(import.meta.env.VITE_SENDGRID_CONFIGURED), // Optional flag
+};
+
+const ALL_INTEGRATIONS: IntegrationConfig[] = [
   {
     type: 'calendly',
     name: 'Calendly',
@@ -120,6 +128,16 @@ const INTEGRATIONS: IntegrationConfig[] = [
     requiresOAuth: false,
   },
 ];
+
+// Filter to only show configured integrations
+const CONFIGURED_INTEGRATIONS = ALL_INTEGRATIONS.filter(
+  (integration) => INTEGRATION_ENV_CHECKS[integration.type]
+);
+
+// Get unconfigured integrations for "Coming Soon" section
+const COMING_SOON_INTEGRATIONS = ALL_INTEGRATIONS.filter(
+  (integration) => !INTEGRATION_ENV_CHECKS[integration.type]
+);
 
 // ============================================
 // COMPONENT
@@ -345,9 +363,20 @@ export function IntegrationSettings({ tenantId, tenantSlug }: Props) {
         </div>
       )}
 
-      {/* Integration Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {INTEGRATIONS.map((config) => {
+      {/* Integration Cards - Only show configured integrations */}
+      {CONFIGURED_INTEGRATIONS.length === 0 ? (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center">
+            <Link2 className="w-8 h-8 text-gray-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-white mb-2">No Integrations Configured</h3>
+          <p className="text-gray-400 text-sm max-w-md mx-auto">
+            Integrations will appear here once configured. Contact your administrator to set up OAuth credentials for Calendly, Clio, or other services.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {CONFIGURED_INTEGRATIONS.map((config) => {
           const integration = getIntegrationStatus(config.type);
           const isConnected = integration?.status === 'connected';
           const hasError = integration?.status === 'error';
@@ -503,7 +532,43 @@ export function IntegrationSettings({ tenantId, tenantSlug }: Props) {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
+
+      {/* Coming Soon Section - Show unconfigured integrations */}
+      {COMING_SOON_INTEGRATIONS.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="text-gray-500">Coming Soon</span>
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {COMING_SOON_INTEGRATIONS.map((config) => (
+              <div
+                key={config.type}
+                className="bg-gray-900/50 border border-gray-800/50 rounded-xl p-5 opacity-60"
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className="p-3 rounded-xl"
+                    style={{ backgroundColor: `${config.color}10` }}
+                  >
+                    <div style={{ color: config.color }} className="opacity-50">
+                      {config.icon}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-medium">{config.name}</h4>
+                    <p className="text-gray-500 text-sm">{config.description}</p>
+                  </div>
+                  <span className="ml-auto px-3 py-1 bg-gray-800 text-gray-400 text-xs rounded-full">
+                    Coming Soon
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Help Section */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
