@@ -316,14 +316,44 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 className="form-input form-select"
               >
                 <option value="">Select practice area</option>
-                <option value="personal-injury">Personal Injury</option>
-                <option value="family-law">Family Law</option>
-                <option value="criminal-defense">Criminal Defense</option>
-                <option value="corporate">Corporate Law</option>
-                <option value="real-estate">Real Estate</option>
-                <option value="immigration">Immigration</option>
-                <option value="bankruptcy">Bankruptcy</option>
-                <option value="estate-planning">Estate Planning</option>
+                <optgroup label="Litigation">
+                  <option value="class-action">Class Action Litigation</option>
+                  <option value="federal-securities">Federal Securities Litigation</option>
+                  <option value="antitrust">Antitrust</option>
+                  <option value="consumer-fraud">Consumer Fraud</option>
+                  <option value="product-liability">Product Liability</option>
+                  <option value="complex-commercial">Complex Commercial Litigation</option>
+                  <option value="business-litigation">Business Litigation</option>
+                  <option value="appellate-law">Appellate Law</option>
+                  <option value="criminal-litigation">Criminal Litigation</option>
+                </optgroup>
+                <optgroup label="Employment & Labor">
+                  <option value="employment-labor">Employment/Labor Law</option>
+                  <option value="employment-litigation">Employment Litigation</option>
+                  <option value="whistle-blower">Whistle Blower Defense</option>
+                </optgroup>
+                <optgroup label="Family Law">
+                  <option value="family-law">Family Law</option>
+                  <option value="divorce">Divorce</option>
+                  <option value="domestic-abuse">Domestic Abuse</option>
+                  <option value="custody">Custody</option>
+                  <option value="mediation-arbitration">Mediation, Arbitration & ADR</option>
+                  <option value="prenuptial">Prenuptial Agreements</option>
+                </optgroup>
+                <optgroup label="Real Estate & Corporate">
+                  <option value="condominium-law">Condominium Law</option>
+                  <option value="real-estate">Real Estate</option>
+                  <option value="corporate">Corporate Law</option>
+                </optgroup>
+                <optgroup label="Specialty Areas">
+                  <option value="public-entity">Public Entity Representation</option>
+                  <option value="cannabis-law">Cannabis Law</option>
+                  <option value="committee-character">Committee on Character</option>
+                  <option value="immigration">Immigration</option>
+                  <option value="bankruptcy">Bankruptcy</option>
+                  <option value="estate-planning">Estate Planning</option>
+                  <option value="personal-injury">Personal Injury</option>
+                </optgroup>
               </select>
             </FormGroup>
             <div className="grid grid-cols-2 gap-6">
@@ -979,11 +1009,27 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                   onChange={(e) => handleSettingsChange({ demoScenario: e.target.value })}
                   className="form-input form-select"
                 >
-                  <option value="personal-injury">Personal Injury Intake</option>
-                  <option value="family-law">Family Law Consultation</option>
-                  <option value="criminal-defense">Criminal Defense Inquiry</option>
-                  <option value="corporate">Corporate Matter</option>
-                  <option value="urgent">Urgent Matter Demo</option>
+                  <optgroup label="Common Scenarios">
+                    <option value="personal-injury">Personal Injury Intake</option>
+                    <option value="family-law">Family Law Consultation</option>
+                    <option value="divorce">Divorce Inquiry</option>
+                    <option value="custody">Custody Matter</option>
+                    <option value="criminal-litigation">Criminal Defense Inquiry</option>
+                    <option value="urgent">Urgent Matter Demo</option>
+                  </optgroup>
+                  <optgroup label="Business & Employment">
+                    <option value="employment-labor">Employment/Labor Issue</option>
+                    <option value="whistle-blower">Whistle Blower Defense</option>
+                    <option value="class-action">Class Action Inquiry</option>
+                    <option value="corporate">Corporate Matter</option>
+                    <option value="business-litigation">Business Litigation</option>
+                  </optgroup>
+                  <optgroup label="Specialty">
+                    <option value="cannabis-law">Cannabis Law Inquiry</option>
+                    <option value="real-estate">Real Estate Matter</option>
+                    <option value="immigration">Immigration Case</option>
+                    <option value="bankruptcy">Bankruptcy Consultation</option>
+                  </optgroup>
                 </select>
               </FormGroup>
             )}
