@@ -181,7 +181,7 @@ export const sendFollowUpEmailDeclaration: FunctionDeclaration = {
 export async function generateLawyerReport(clientInfo: Partial<ClientInfo>, transcript: string, isUrgent: boolean, urgencyReason: string): Promise<LawyerReport> {
     const apiKey = import.meta.env.VITE_API_KEY;
     if (!apiKey) {
-        throw new Error("API key not found in environment variables. Please set VITE_API_KEY.");
+        throw new Error("API key not found in environment variables");
     }
     const ai = new GoogleGenAI({ apiKey });
     const secureUploadLink = `https://tedlaw.secure-uploads.com/${Date.now()}-${Math.random().toString(36).substring(2)}`;
@@ -258,7 +258,7 @@ ${isUrgent ? `\nCRITICAL ALERT: This case was flagged as URGENT during the call 
 export async function generateFollowUpActions(lawyerReport: LawyerReport): Promise<GenerateContentResponse> {
     const apiKey = import.meta.env.VITE_API_KEY;
     if (!apiKey) {
-        throw new Error("API key not found in environment variables. Please set VITE_API_KEY.");
+        throw new Error("API key not found in environment variables");
     }
     const ai = new GoogleGenAI({ apiKey });
 

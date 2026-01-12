@@ -49,6 +49,48 @@ import {
   generateLawyerReport,
   generateFollowUpActions
 } from './services/geminiService';
+import { marked } from 'marked';
+import { logger } from './utils/logger';
+import { validateEmail, validatePhone, validateName } from './utils/validators';
+import { validateEmail as validateEmailForm, validatePhone as validatePhoneForm } from './utils/formValidation';
+import {
+  UserIcon,
+  MailIcon,
+  PhoneIcon,
+  CalendarIcon,
+  DocumentIcon,
+  ChatIcon,
+  ShieldIcon,
+  AlertIcon,
+  DownloadIcon,
+  CheckIcon,
+  RefreshIcon,
+  SettingsIcon,
+} from './utils/icons';
+import {
+  AppError,
+  MicrophonePermissionError,
+  MicrophoneNotFoundError,
+  MicrophoneNotReadableError,
+  AudioContextError,
+  APIError,
+  ErrorCode,
+  getUserFriendlyMessage
+} from './types/errors';
+
+const availableVoices = {
+  'Kore': 'Kore (Professional, Clear)',
+  'Puck': 'Puck (Warm, Engaging)',
+  'Charon': 'Charon (Deep, Authoritative)',
+  'Fenrir': 'Fenrir (Calm, Reassuring)',
+  'Zephyr': 'Zephyr (Friendly, Bright)',
+};
+
+const crmIntegrations = {
+    clio: { name: 'Clio', logo: 'https://images.ctfassets.net/5d820s2s4c2v/513522325/687352378a5e8006456a099d363b9842/Clio-white.svg' },
+    myCase: { name: 'MyCase', logo: 'https://www.mycase.com/wp-content/uploads/2021/05/mycase-logo-white.svg' },
+    lawmatics: { name: 'Lawmatics', logo: 'https://lawmatics.com/wp-content/uploads/2023/10/LM_Logo_White_Horizontal.svg' },
+};
 
 const DEFAULT_SETTINGS: ReceptionistSettings = {
     aiName: 'Sarah',
@@ -266,11 +308,84 @@ const App: React.FC = () => {
     });
   }, []);
 
+  const initiateCrmExport = useCallback((crmName: keyof CRMIntegrationsState) => {
+      setPendingCrm(crmName);
+      setShowCrmModal(true);
+  }, []);
+
+  const confirmCrmExport = useCallback(() => {
+    if (!pendingCrm) return;
+
+    // Validate client data before export
+    if (!lawyerReport?.clientDetails) {
+      setErrorMessage('Cannot export: Missing client details');
+      setShowCrmModal(false);
+      logger.error('CRM export attempted with missing client details', undefined, 'crm');
+      return;
+    }
+
+    const { name, email, phone } = lawyerReport.clientDetails;
+
+    // Validate required fields
+    if (!name || name.trim().length === 0) {
+      setErrorMessage('Cannot export: Client name is required');
+      setShowCrmModal(false);
+      logger.warn('CRM export validation failed for name', 'Missing name', 'crm');
+      return;
+    }
+
+    const emailValidation = validateEmailForm(email || '');
+    const phoneValidation = validatePhoneForm(phone || '');
+
+    if (!emailValidation.isValid) {
+      setErrorMessage(`Cannot export: ${emailValidation.error}`);
+      setShowCrmModal(false);
+      logger.warn('CRM export validation failed for email', emailValidation.error, 'crm');
+      return;
+    }
+
+    if (!phoneValidation.isValid) {
+      setErrorMessage(`Cannot export: ${phoneValidation.error}`);
+      setShowCrmModal(false);
+      logger.warn('CRM export validation failed for phone', phoneValidation.error, 'crm');
+      return;
+    }
+
+    const crmName = pendingCrm;
+    setShowCrmModal(false);
+    setCrmExportStatus(prev => ({ ...prev, [crmName]: CRMExportStatus.EXPORTING }));
+
+    logger.info(`Starting CRM export to ${crmName}`, { clientName: name }, 'crm');
+
+    // Simulate API call
+    setTimeout(() => {
+      setCrmExportStatus(prev => ({ ...prev, [crmName]: CRMExportStatus.SUCCESS }));
+      setErrorMessage(null);
+      logger.info(`Successfully exported to ${crmName}`, undefined, 'crm');
+    }, 1500);
+  }, [pendingCrm, lawyerReport]);
+
+  const clearCrmLogs = useCallback(() => {
+      setCrmExportStatus({
+        clio: CRMExportStatus.IDLE,
+        myCase: CRMExportStatus.IDLE,
+        lawmatics: CRMExportStatus.IDLE,
+      });
+  }, []);
+
+  const toggleAction = (index: number) => {
+      setCompletedActions(prev => ({
+          ...prev,
+          [index]: !prev[index]
+      }));
+  };
+
   const startCallInternal = useCallback(async () => {
     const apiKey = import.meta.env.VITE_API_KEY;
     if (!apiKey) {
       setErrorMessage("API Key Configuration Error: Please set VITE_API_KEY in your Vercel environment variables.");
       setCallState(CallState.ERROR);
+      logger.error('API Key not found in environment variables', undefined, 'auth');
       return;
     }
 
@@ -549,6 +664,48 @@ const App: React.FC = () => {
             </svg>
             <span className="text-[#6B7280]">Loading...</span>
           </div>
+          
+          <div className="mt-8 pt-6 border-t border-[#2D3139] flex justify-end">
+               <button 
+                  onClick={() => setActiveTab('LIVE_INTAKE')} 
+                  className="bg-[#00FFA3] hover:bg-[#00D88A] text-black font-bold py-2 px-6 rounded-lg transition-colors text-sm"
+                >
+                   Save & Return to Dashboard
+               </button>
+          </div>
+      </div>
+  );
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      {/* Loading Overlay */}
+      {(callState === CallState.CONNECTING || callState === CallState.PROCESSING) && (
+          <FullPageLoader
+            message={callState === CallState.CONNECTING ? 'Connecting to Gemini Live API...' : 'Generating Report...'}
+          />
+      )}
+
+      {/* Error Banner */}
+      {errorMessage && (
+          <div className="bg-red-500/10 border-b border-red-500/20 px-8 py-3 flex items-center justify-between animate-fade-in-down sticky top-0 z-50 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                  <AlertIcon />
+                  <span className="text-sm font-medium text-red-200">{errorMessage}</span>
+              </div>
+              <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-white transition-colors">
+                  <span className="text-xs font-bold uppercase">Dismiss</span>
+              </button>
+          </div>
+      )}
+
+      {/* Header */}
+      <header className="bg-[#0F1115] border-b border-[#2D3139] h-20 px-8 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-4">
+             <img src={brandingConfig.logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
+             <div className="flex flex-col">
+                 <h1 className="text-xl font-bold tracking-tight text-white leading-none">TED LAW FIRM</h1>
+                 <span className="text-[10px] font-bold tracking-[0.2em] text-[#00FFA3] mt-1">AI LEGAL RECEPTIONIST</span>
+             </div>
         </div>
       </ThemeProvider>
     );
