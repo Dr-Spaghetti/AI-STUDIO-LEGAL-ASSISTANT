@@ -193,6 +193,17 @@ const App: React.FC = () => {
       }
   });
 
+  // CRM State
+  const [pendingCrm, setPendingCrm] = useState<string | null>(null);
+  const [showCrmModal, setShowCrmModal] = useState(false);
+  const [crmExportStatus, setCrmExportStatus] = useState<Record<string, CRMExportStatus>>({
+    clio: CRMExportStatus.IDLE,
+    myCase: CRMExportStatus.IDLE,
+    lawmatics: CRMExportStatus.IDLE,
+  });
+  const [lawyerReport, setLawyerReport] = useState<LawyerReport | null>(null);
+  const [completedActions, setCompletedActions] = useState<Record<number, boolean>>({});
+
   // Refs
   const liveSessionRef = useRef<LiveSessionPromise | null>(null);
   const inputAudioContextRef = useRef<AudioContext | null>(null);
@@ -664,48 +675,6 @@ const App: React.FC = () => {
             </svg>
             <span className="text-[#6B7280]">Loading...</span>
           </div>
-          
-          <div className="mt-8 pt-6 border-t border-[#2D3139] flex justify-end">
-               <button 
-                  onClick={() => setActiveTab('LIVE_INTAKE')} 
-                  className="bg-[#00FFA3] hover:bg-[#00D88A] text-black font-bold py-2 px-6 rounded-lg transition-colors text-sm"
-                >
-                   Save & Return to Dashboard
-               </button>
-          </div>
-      </div>
-  );
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      {/* Loading Overlay */}
-      {(callState === CallState.CONNECTING || callState === CallState.PROCESSING) && (
-          <FullPageLoader
-            message={callState === CallState.CONNECTING ? 'Connecting to Gemini Live API...' : 'Generating Report...'}
-          />
-      )}
-
-      {/* Error Banner */}
-      {errorMessage && (
-          <div className="bg-red-500/10 border-b border-red-500/20 px-8 py-3 flex items-center justify-between animate-fade-in-down sticky top-0 z-50 backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                  <AlertIcon />
-                  <span className="text-sm font-medium text-red-200">{errorMessage}</span>
-              </div>
-              <button onClick={() => setErrorMessage(null)} className="text-red-400 hover:text-white transition-colors">
-                  <span className="text-xs font-bold uppercase">Dismiss</span>
-              </button>
-          </div>
-      )}
-
-      {/* Header */}
-      <header className="bg-[#0F1115] border-b border-[#2D3139] h-20 px-8 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4">
-             <img src={brandingConfig.logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
-             <div className="flex flex-col">
-                 <h1 className="text-xl font-bold tracking-tight text-white leading-none">TED LAW FIRM</h1>
-                 <span className="text-[10px] font-bold tracking-[0.2em] text-[#00FFA3] mt-1">AI LEGAL RECEPTIONIST</span>
-             </div>
         </div>
       </ThemeProvider>
     );
