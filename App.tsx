@@ -675,16 +675,7 @@ const App: React.FC = () => {
             </svg>
             <span className="text-[#6B7280]">Loading...</span>
           </div>
-          
-          <div className="mt-8 pt-6 border-t border-[#2D3139] flex justify-end">
-               <button 
-                  onClick={() => setActiveTab('LIVE_INTAKE')} 
-                  className="bg-[#00FFA3] hover:bg-[#00D88A] text-black font-bold py-2 px-6 rounded-lg transition-colors text-sm"
-                >
-                   Save & Return to Dashboard
-               </button>
-          </div>
-      </div>
+        </div>
       </ThemeProvider>
     );
   }
