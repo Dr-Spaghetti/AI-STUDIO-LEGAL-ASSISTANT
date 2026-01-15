@@ -84,8 +84,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
   // Handle settings update with save feedback
   const handleSettingsChange = useCallback((updates: Partial<ReceptionistSettings>, showToast = true) => {
-    const newSettings = { ...settings, ...updates };
-    setSettings(newSettings);
+    setSettings((prevSettings) => {
+      const newSettings = { ...prevSettings, ...updates };
+      return newSettings;
+    });
 
     // Show save feedback (optional)
     if (showToast) {
@@ -95,7 +97,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
         setToast({ message: 'Settings saved successfully', type: 'success' });
       }, 300);
     }
-  }, [settings, setSettings]);
+  }, [setSettings]);
 
   // Handle logo file upload
   const handleLogoUpload = useCallback((file: File) => {
@@ -162,27 +164,34 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
       return;
     }
 
-    const employees = settings.employees || [];
-    const existingIndex = employees.findIndex(e => e.id === editingEmployee.id);
+    setSettings((prevSettings) => {
+      const employees = prevSettings.employees || [];
+      const existingIndex = employees.findIndex(e => e.id === editingEmployee.id);
 
-    let newEmployees: Employee[];
-    if (existingIndex >= 0) {
-      newEmployees = [...employees];
-      newEmployees[existingIndex] = editingEmployee;
-    } else {
-      newEmployees = [...employees, editingEmployee];
-    }
+      let newEmployees: Employee[];
+      if (existingIndex >= 0) {
+        newEmployees = [...employees];
+        newEmployees[existingIndex] = editingEmployee;
+      } else {
+        newEmployees = [...employees, editingEmployee];
+      }
 
-    handleSettingsChange({ employees: newEmployees });
+      return { ...prevSettings, employees: newEmployees };
+    });
+
     setShowEmployeeModal(false);
     setEditingEmployee(null);
-  }, [editingEmployee, settings.employees, handleSettingsChange]);
+    setToast({ message: 'Team member saved successfully', type: 'success' });
+  }, [editingEmployee, setSettings]);
 
   const handleDeleteEmployee = useCallback((id: string) => {
     if (!confirm('Are you sure you want to remove this team member?')) return;
-    const employees = (settings.employees || []).filter(e => e.id !== id);
-    handleSettingsChange({ employees });
-  }, [settings.employees, handleSettingsChange]);
+    setSettings((prevSettings) => ({
+      ...prevSettings,
+      employees: (prevSettings.employees || []).filter(e => e.id !== id)
+    }));
+    setToast({ message: 'Team member removed successfully', type: 'success' });
+  }, [setSettings]);
 
   const renderIcon = (icon: string, isActive: boolean) => {
     const cls = `w-5 h-5 ${isActive ? 'icon-active' : 'text-[#6B7280]'}`;
