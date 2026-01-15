@@ -262,7 +262,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                     <img
                       src={settings.logoUrl}
                       alt="Current logo"
-                      className="h-16 max-w-[200px] object-contain rounded"
+                      className="max-w-[200px] object-contain rounded"
+                      style={{ height: `${settings.logoSize || 64}px` }}
                     />
                     <button
                       onClick={() => handleSettingsChange({ logoUrl: '' })}
@@ -308,6 +309,40 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 </div>
               </div>
             </FormGroup>
+
+            {/* Logo Size Control */}
+            {settings.logoUrl && (
+              <FormGroup label="Logo Size" hint="Adjust the height of your logo (20-200px)">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="20"
+                      max="200"
+                      value={settings.logoSize || 64}
+                      onChange={(e) => handleSettingsChange({ logoSize: parseInt(e.target.value) })}
+                      className="flex-1 h-2 bg-[#2D3139] rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                      style={{
+                        background: `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((settings.logoSize || 64) - 20) / 180 * 100}%, #2D3139 ${((settings.logoSize || 64) - 20) / 180 * 100}%, #2D3139 100%)`
+                      }}
+                    />
+                    <input
+                      type="number"
+                      min="20"
+                      max="200"
+                      value={settings.logoSize || 64}
+                      onChange={(e) => {
+                        const value = Math.max(20, Math.min(200, parseInt(e.target.value) || 64));
+                        handleSettingsChange({ logoSize: value });
+                      }}
+                      className="w-20 px-3 py-2 bg-[#0F1115] border border-[#2D3139] rounded-lg text-white text-center focus:outline-none focus:border-cyan-500"
+                    />
+                    <span className="text-[#6B7280] text-sm">px</span>
+                  </div>
+                  <p className="text-[#6B7280] text-xs">Current size: {settings.logoSize || 64}px</p>
+                </div>
+              </FormGroup>
+            )}
 
             <FormGroup label="Primary Practice Area">
               <select
@@ -415,7 +450,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               >
                 <div className="flex items-center gap-3 mb-3">
                   {settings.logoUrl ? (
-                    <img src={settings.logoUrl} alt="Logo" className="h-8 object-contain" />
+                    <img
+                      src={settings.logoUrl}
+                      alt="Logo"
+                      className="object-contain"
+                      style={{ height: `${(settings.logoSize || 64) / 2}px` }}
+                    />
                   ) : (
                     <div
                       className="font-bold text-lg"
@@ -1344,6 +1384,37 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
         }
         .animate-slide-up {
           animation: slide-up 0.3s ease-out;
+        }
+
+        /* Form Select Styles - Fix dropdown click selection */
+        .form-select {
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+          background-position: right 0.5rem center;
+          background-repeat: no-repeat;
+          background-size: 1.5em 1.5em;
+          padding-right: 2.5rem;
+          cursor: pointer;
+          pointer-events: auto !important;
+          z-index: 10;
+          position: relative;
+        }
+
+        .form-select:focus {
+          outline: none;
+          border-color: #06b6d4;
+          box-shadow: 0 0 0 1px #06b6d4;
+        }
+
+        .form-select option {
+          background-color: #1A1D24;
+          color: white;
+          padding: 0.5rem;
+          cursor: pointer;
+        }
+
+        .form-select option:hover {
+          background-color: #2D3139;
         }
       `}</style>
     </>
