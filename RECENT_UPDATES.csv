@@ -1,0 +1,18 @@
+Category,Issue,Status,Priority,File Modified,Solution,Commit Hash,PR Number
+UI/UX,Logo Resize Functionality Missing,Fixed,CRITICAL,types.ts,"Added logoSize property (20-200px range)",d602a64,#29
+UI/UX,Logo Resize Functionality Missing,Fixed,CRITICAL,components/SettingsPanel.tsx,"Implemented slider + numeric input control with live preview",d602a64,#29
+UI/UX,Dropdown Click Selection Not Working,Fixed,MODERATE,components/SettingsPanel.tsx,"Added form-select CSS styles with proper pointer-events and z-index",d602a64,#29
+UI/UX,Toggle Visual State Delay,Fixed,MINOR,index.html,"Reduced transition from 0.3s to 0.15s for snappier response",d602a64,#29
+UI/UX,Eyeball Button Shows No Transcript,Fixed,MODERATE,components/CaseHistoryPanel.tsx,"Added Call Notes/Transcript section to Case Details modal",d602a64,#29
+Performance,Typing Lag in Settings,Fixed,CRITICAL,components/SettingsPanel.tsx,"Changed handleSettingsChange to use functional updates - removed stale closure bug",c6859c1,#31
+Performance,Settings Not Persisting,Fixed,CRITICAL,components/SettingsPanel.tsx,"Updated to setSettings(prev => ...) pattern to prevent race conditions",c6859c1,#31
+Performance,Lost Characters When Typing,Fixed,CRITICAL,components/SettingsPanel.tsx,"Removed 'settings' from useCallback dependencies array",c6859c1,#31
+Performance,Employee Management State Bugs,Fixed,MODERATE,components/SettingsPanel.tsx,"Updated handleSaveEmployee and handleDeleteEmployee to use functional updates",c6859c1,#31
+AI Behavior,Receptionist Not Professional Enough,Enhanced,MODERATE,App.tsx,"Improved languageStyle with detailed professional instructions",c6859c1,#31
+AI Behavior,Conversation Pacing Feels Robotic,Enhanced,MINOR,App.tsx,"Added 400ms response delay for natural conversation flow",c6859c1,#31
+AI Behavior,Missing Urgency Keywords,Enhanced,MINOR,App.tsx,"Expanded urgency keywords list to include 'emergency', 'urgent', 'immediate', 'today'",c6859c1,#31
+AI Behavior,Opening Line Too Casual,Enhanced,MINOR,App.tsx,"Updated to professional greeting with better structure",c6859c1,#31
+AI Behavior,No Closing Line,Enhanced,MINOR,App.tsx,"Added professional closing line for call completion",c6859c1,#31
+Configuration,Default Settings Override Custom Branding,Fixed,CRITICAL,App.tsx,"Changed from 'Ted Law Firm' to generic 'Your Law Firm' defaults",1758360,#31
+Build System,Build Verification,Tested,N/A,N/A,"Confirmed successful build: 694.04 kB (gzip: 170.68 kB) in 6.75s",1758360,#31
+Deployment,Vercel Auto-Deploy,Deployed,N/A,N/A,"All changes deployed to https://ai-studio-legal-assistant.vercel.app/",N/A,#31
