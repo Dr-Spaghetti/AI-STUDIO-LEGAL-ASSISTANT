@@ -94,15 +94,15 @@ const crmIntegrations = {
 
 const DEFAULT_SETTINGS: ReceptionistSettings = {
     aiName: 'Sarah',
-    firmName: 'Ted Law Firm',
+    firmName: 'Your Law Firm',
     tone: 'Professional, warm, and empathetic',
     languageStyle: 'Speak naturally with a calm, confident tone. Be professional yet approachable. Listen actively and respond thoughtfully. Use clear language without legal jargon. Show genuine care for the caller\'s situation.',
     responseDelay: 400,
-    openingLine: "Good morning, thank you for calling Ted Law Firm. My name is Sarah. How may I help you today?",
-    closingLine: "Thank you for calling Ted Law Firm. We'll be in touch shortly. Have a wonderful day.",
+    openingLine: "Good morning, thank you for calling. My name is Sarah. How may I help you today?",
+    closingLine: "Thank you for calling. We'll be in touch shortly. Have a wonderful day.",
     urgencyKeywords: ['court date', 'deadline', 'statute of limitations', 'served papers', 'arrested', 'police', 'emergency', 'urgent', 'immediate', 'today'],
     voiceName: 'Kore',
-    firmBio: "We are a boutique law firm specializing in Personal Injury and Family Law, serving clients throughout the New York area. Our experienced attorneys are dedicated to fighting for your rights and achieving the best possible outcomes.",
+    firmBio: "We are a full-service law firm dedicated to serving our clients with professionalism and care.",
     // Extended defaults
     hipaaMode: false,
     legalDisclaimer: true,
