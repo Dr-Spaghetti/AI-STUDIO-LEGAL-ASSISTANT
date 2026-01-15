@@ -41,6 +41,7 @@ export interface ReceptionistSettings {
   aiName: string;
   firmName: string;
   logoUrl?: string;
+  logoSize?: number; // Logo height in pixels (default: 64)
   primaryPracticeArea?: string;
   brandPrimaryColor?: string;
   brandSecondaryColor?: string;

@@ -459,6 +459,15 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
                   <div className="mt-1">{getPriorityBadge(selectedCase.priority)}</div>
                 </div>
               </div>
+              {/* Transcript / Notes Section */}
+              {selectedCase.description && (
+                <div>
+                  <label className="text-[12px] text-[#6B7280] uppercase mb-2 block">Call Notes / Transcript</label>
+                  <div className="p-4 bg-[#0F1115] border border-[#2D3139] rounded-lg max-h-[300px] overflow-y-auto">
+                    <p className="text-[#9CA3AF] text-sm whitespace-pre-wrap leading-relaxed">{selectedCase.description}</p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="p-5 border-t border-[#2D3139] flex justify-end gap-3">
               <button
