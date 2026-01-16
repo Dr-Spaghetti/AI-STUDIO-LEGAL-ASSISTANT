@@ -667,7 +667,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="AI Assistant Name">
               <input
                 type="text"
-                value={settings.aiName}
+                value={draftSettings.aiName}
                 onChange={(e) => handleDraftChange({ aiName: e.target.value })}
                 className="form-input"
                 placeholder="Sarah"
@@ -730,7 +730,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
             <FormGroup label="Voice Tone">
               <select
-                value={settings.tone}
+                value={draftSettings.tone}
                 onChange={(e) => handleDraftChange({ tone: e.target.value })}
                 className="form-input form-select"
               >
@@ -745,7 +745,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
             <FormGroup label="Language Style" hint="How the AI should speak">
               <select
-                value={settings.languageStyle}
+                value={draftSettings.languageStyle}
                 onChange={(e) => handleDraftChange({ languageStyle: e.target.value })}
                 className="form-input form-select"
               >
@@ -759,7 +759,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
             <FormGroup label="Opening Line" hint="The first thing the AI says when answering">
               <textarea
-                value={settings.openingLine}
+                value={draftSettings.openingLine}
                 onChange={(e) => handleDraftChange({ openingLine: e.target.value })}
                 className="form-input h-24 resize-none"
                 placeholder="Hi, thank you for calling..."
@@ -767,7 +767,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             </FormGroup>
             <FormGroup label="Closing Line" hint="The message before ending the call">
               <textarea
-                value={settings.closingLine || ''}
+                value={draftSettings.closingLine || ''}
                 onChange={(e) => handleDraftChange({ closingLine: e.target.value })}
                 className="form-input h-24 resize-none"
                 placeholder="Thank you for calling. Have a great day!"
@@ -781,7 +781,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
           <div className="space-y-6">
             <FormGroup label="Firm Bio / Context" hint="Background information the AI uses to answer questions">
               <textarea
-                value={settings.firmBio}
+                value={draftSettings.firmBio}
                 onChange={(e) => handleDraftChange({ firmBio: e.target.value })}
                 className="form-input h-32 resize-none"
                 placeholder="Describe your firm..."
@@ -790,7 +790,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Response Delay (milliseconds)" hint="Add a slight pause to make responses feel more natural">
               <input
                 type="number"
-                value={settings.responseDelay}
+                value={draftSettings.responseDelay}
                 onChange={(e) => handleDraftChange({ responseDelay: parseInt(e.target.value) || 0 })}
                 className="form-input"
                 placeholder="0"
@@ -798,7 +798,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             </FormGroup>
             <FormGroup label="Urgency Keywords" hint="Comma-separated words that trigger urgent case flagging">
               <textarea
-                value={settings.urgencyKeywords.join(', ')}
+                value={draftSettings.urgencyKeywords?.join(', ') || ''}
                 onChange={(e) => handleDraftChange({ urgencyKeywords: e.target.value.split(',').map(k => k.trim()).filter(k => k) })}
                 className="form-input h-20 resize-none"
                 placeholder="court date, deadline, arrested, emergency"
@@ -838,7 +838,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               <FormGroup label="Transfer Phone Number">
                 <input
                   type="tel"
-                  value={settings.transferNumber || ''}
+                  value={draftSettings.transferNumber || ''}
                   onChange={(e) => handleDraftChange({ transferNumber: e.target.value })}
                   className="form-input"
                   placeholder="+1 (555) 123-4567"
@@ -848,7 +848,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Max Call Duration (minutes)">
               <input
                 type="number"
-                value={settings.maxCallDuration || 30}
+                value={draftSettings.maxCallDuration || 30}
                 onChange={(e) => handleDraftChange({ maxCallDuration: parseInt(e.target.value) || 30 })}
                 className="form-input"
               />
@@ -922,8 +922,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               <FormGroup label="Notification Email">
                 <input
                   type="email"
-                  value={settings.notificationEmail || ''}
-                  onChange={(e) => handleSettingsChange({ notificationEmail: e.target.value })}
+                  value={draftSettings.notificationEmail || ''}
+                  onChange={(e) => handleDraftChange({ notificationEmail: e.target.value })}
                   className="form-input"
                   placeholder="alerts@yourfirm.com"
                 />
@@ -939,8 +939,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               <FormGroup label="Notification Phone">
                 <input
                   type="tel"
-                  value={settings.notificationPhone || ''}
-                  onChange={(e) => handleSettingsChange({ notificationPhone: e.target.value })}
+                  value={draftSettings.notificationPhone || ''}
+                  onChange={(e) => handleDraftChange({ notificationPhone: e.target.value })}
                   className="form-input"
                   placeholder="+1 (555) 123-4567"
                 />
@@ -1028,8 +1028,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             {settings.legalDisclaimer && (
               <FormGroup label="Disclaimer Text">
                 <textarea
-                  value={settings.disclaimerText || ''}
-                  onChange={(e) => handleSettingsChange({ disclaimerText: e.target.value })}
+                  value={draftSettings.disclaimerText || ''}
+                  onChange={(e) => handleDraftChange({ disclaimerText: e.target.value })}
                   className="form-input h-24 resize-none"
                   placeholder="This call may be recorded..."
                 />
@@ -1044,8 +1044,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Data Retention (days)">
               <input
                 type="number"
-                value={settings.dataRetentionDays || 365}
-                onChange={(e) => handleSettingsChange({ dataRetentionDays: parseInt(e.target.value) || 365 })}
+                value={draftSettings.dataRetentionDays || 365}
+                onChange={(e) => handleDraftChange({ dataRetentionDays: parseInt(e.target.value) || 365 })}
                 className="form-input"
               />
             </FormGroup>
@@ -1148,8 +1148,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Admin Email">
               <input
                 type="email"
-                value={settings.adminEmail || ''}
-                onChange={(e) => handleSettingsChange({ adminEmail: e.target.value })}
+                value={draftSettings.adminEmail || ''}
+                onChange={(e) => handleDraftChange({ adminEmail: e.target.value })}
                 className="form-input"
                 placeholder="admin@yourfirm.com"
               />
