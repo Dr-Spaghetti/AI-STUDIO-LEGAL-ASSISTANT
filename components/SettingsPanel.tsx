@@ -330,7 +330,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                       max="200"
                       value={settings.logoSize || 64}
                       onChange={(e) => handleSettingsChange({ logoSize: parseInt(e.target.value) })}
-                      className="flex-1 h-2 bg-[#2D3139] rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                      className="flex-1 h-2 rounded-lg appearance-none cursor-pointer logo-size-slider"
                       style={{
                         background: `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((settings.logoSize || 64) - 20) / 180 * 100}%, #2D3139 ${((settings.logoSize || 64) - 20) / 180 * 100}%, #2D3139 100%)`
                       }}
@@ -1191,14 +1191,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
   return (
     <>
-      <div className="flex h-full gap-6">
+      <div className="flex h-full gap-6 flex-col lg:flex-row">
         {/* Sidebar */}
-        <div className="w-[260px] shrink-0 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden flex flex-col">
+        <div className="w-full lg:w-[260px] shrink-0 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden flex flex-col">
           <div className="p-5 border-b border-[#2D3139]">
             <h3 className="text-[16px] font-semibold text-white">Settings</h3>
             <p className="text-[13px] text-[#6B7280] mt-1">Configure your AI receptionist</p>
           </div>
-          <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+          <nav className="flex-1 overflow-y-auto p-3 space-y-1 max-h-[200px] lg:max-h-none">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id;
               return (
@@ -1216,7 +1216,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
         </div>
 
         {/* Content */}
-        <div className="flex-1 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden flex flex-col">
+        <div className="flex-1 min-w-0 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden flex flex-col">
           <div className="p-6 border-b border-[#2D3139] flex items-center justify-between">
             <div>
               <h2 className="text-[20px] font-semibold text-white">
@@ -1424,6 +1424,46 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
         .form-select option:hover {
           background-color: #2D3139;
+        }
+
+        /* Logo Size Slider - Fix visual responsiveness */
+        .logo-size-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 8px;
+          border-radius: 4px;
+          outline: none;
+        }
+
+        .logo-size-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #06b6d4;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          transition: transform 0.1s ease;
+        }
+
+        .logo-size-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.1);
+        }
+
+        .logo-size-slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #06b6d4;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          transition: transform 0.1s ease;
+        }
+
+        .logo-size-slider::-moz-range-thumb:hover {
+          transform: scale(1.1);
         }
       `}</style>
     </>

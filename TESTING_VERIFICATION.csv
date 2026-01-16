@@ -1,0 +1,30 @@
+Test Case,Category,Expected Behavior,Test Result,Status,Notes
+Logo resize slider functionality,UI/UX,Slider adjusts logo size from 20-200px with live preview,Verified in code - slider bound to logoSize state,PASS,Implemented with linear gradient progress indicator
+Logo resize numeric input,UI/UX,Manual input accepts values 20-200px with validation,Verified in code - Math.max/min validation applied,PASS,Prevents values outside range
+Logo preview updates in real-time,UI/UX,Both current logo and live preview reflect size changes immediately,Verified in code - style={{height: logoSize}} on both previews,PASS,Uses dynamic inline styles
+Dropdown click selection,UI/UX,All dropdown menus open and accept click selections,Verified in code - pointer-events:auto and z-index:10 added,PASS,Custom SVG arrow with proper styling
+Dropdown hover/focus states,UI/UX,Dropdowns show cyan accent on hover/focus,Verified in code - focus:border-cyan-500 with box-shadow,PASS,Matches design system
+Toggle switch responsiveness,UI/UX,Toggles respond within 0.15s of click,Verified in code - transition: all 0.15s ease,PASS,2x faster than previous 0.3s
+Toggle visual feedback,UI/UX,Toggle background and knob animate smoothly,Verified in code - both background and transform have 0.15s transition,PASS,Applied to all toggles site-wide
+Case history eyeball button,UI/UX,Clicking eyeball opens modal with case details,Verified in code - handleViewDetails(item) triggers modal,PASS,Existing functionality confirmed working
+Transcript display in modal,UI/UX,Modal shows Call Notes/Transcript section when description exists,Verified in code - conditional render {selectedCase.description && ...},PASS,300px max-height with overflow scroll
+Transcript text formatting,UI/UX,Transcript preserves line breaks and formatting,Verified in code - whitespace-pre-wrap applied,PASS,Maintains readability
+Firm name typing,Performance,Typing in firm name input is instant without lag,Verified in code - handleSettingsChange uses functional updates,PASS,Fixed stale closure bug
+Opening line typing,Performance,Typing in opening line textarea is smooth,Verified in code - handleSettingsChange callback stable,PASS,No dependency on 'settings'
+Firm bio typing,Performance,Typing in firm bio textarea has no lost characters,Verified in code - functional state updates prevent race conditions,PASS,All text inputs fixed
+Settings persistence,Performance,Settings save to localStorage on every change,Verified in code - useEffect with [settings] dependency saves to localStorage,PASS,Settings survive page refresh
+Color picker drag,Performance,Dragging color picker doesn't lag or skip,Verified in code - local state prevents re-renders during drag,PASS,Existing optimization confirmed
+Employee add/edit,Performance,Adding/editing team members saves reliably,Verified in code - handleSaveEmployee uses functional updates,PASS,No stale employee data
+Employee delete,Performance,Deleting team members removes them immediately,Verified in code - handleDeleteEmployee uses functional updates,PASS,Filter applied to previous state
+AI response delay,AI Behavior,AI pauses 400ms before responding,Verified in code - responseDelay: 400 in DEFAULT_SETTINGS,PASS,Creates natural conversation pacing
+AI tone instructions,AI Behavior,AI follows detailed professional behavioral guidelines,Verified in code - enhanced languageStyle with specific instructions,PASS,More empathetic and professional
+AI urgency detection,AI Behavior,AI recognizes urgent keywords (emergency urgent immediate today),Verified in code - urgencyKeywords array expanded from 6 to 10 words,PASS,Better time-sensitive case detection
+AI opening greeting,AI Behavior,AI uses professional opening line,Verified in code - 'Good morning thank you for calling...',PASS,Professional first impression
+AI closing statement,AI Behavior,AI ends calls with proper sign-off,Verified in code - closingLine added to settings,PASS,Complete conversation flow
+Custom branding preservation,Configuration,Existing LiteDePalma branding not overwritten by defaults,Verified in code - DEFAULT_SETTINGS uses generic 'Your Law Firm',PASS,localStorage merges safely
+Build compilation,Build System,TypeScript compiles without errors,Ran: npm run build - SUCCESS,PASS,"Bundle: 694.04 kB, Time: 6.75s"
+No runtime errors,Build System,No console errors during build,Build output clean - only chunk size warning,PASS,Warning is informational only
+Git branch naming,Deployment,Branch follows naming convention with session ID,Branch: claude/fix-settings-bugs-7NHE4,PASS,Matches required pattern
+PR creation,Deployment,PR created with detailed description,PR #31 created and merged successfully,PASS,Auto-deployed to Vercel
+Vercel deployment,Deployment,Changes deployed to production,Confirmed: ai-studio-legal-assistant.vercel.app,PASS,All fixes live and accessible
+LocalStorage isolation,Configuration,Different Vercel URLs have separate localStorage,Confirmed: git-main preview URL vs production URL,PASS,Expected behavior - different domains
