@@ -214,7 +214,8 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
 
         {/* Table */}
         <div className="flex-1 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden">
-          <table className="data-table">
+          <div className="overflow-x-auto">
+            <table className="data-table min-w-full">
             <thead>
               <tr className="bg-[#0F1115]">
                 <th style={{ width: '10%' }}>Date</th>
@@ -269,7 +270,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
                   <td>
                     <div>
                       <p className="text-[14px] font-medium text-white transition hover-accent">{item.clientName}</p>
-                      <p className="text-[12px] text-[#6B7280]">{item.email}</p>
+                      <p className="text-[12px] text-[#6B7280] truncate max-w-[200px]" title={item.email}>{item.email}</p>
                     </div>
                   </td>
                   <td className="text-[#9CA3AF]">{item.caseType}</td>
@@ -311,6 +312,7 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     );

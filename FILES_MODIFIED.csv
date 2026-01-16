@@ -1,0 +1,7 @@
+File Path,Total Lines,Lines Added,Lines Removed,Net Change,Changes Description,Commit,PR
+types.ts,292,1,0,+1,"Added logoSize?: number property to ReceptionistSettings interface",d602a64,#29
+components/SettingsPanel.tsx,1423,75,4,+71,"Added logo resize controls (slider + input), Added form-select CSS styles, Fixed handleSettingsChange/handleSaveEmployee/handleDeleteEmployee with functional updates",d602a64 & c6859c1,#29 & #31
+index.html,402,0,2,-2,"Reduced toggle-switch transition from 0.3s to 0.15s (2 occurrences)",d602a64,#29
+components/CaseHistoryPanel.tsx,489,9,0,+9,"Added transcript/notes section to Case Details modal with conditional rendering",d602a64,#29
+App.tsx,848,9,5,+4,"Enhanced DEFAULT_SETTINGS: improved languageStyle, added responseDelay (400ms), expanded urgencyKeywords, better opening/closing lines, changed to generic firm name",c6859c1 & 1758360,#31
+Total,3454,94,11,+83,"5 files modified with net addition of 83 lines",Multiple,#29 & #31

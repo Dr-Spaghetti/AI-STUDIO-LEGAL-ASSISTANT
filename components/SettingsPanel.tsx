@@ -63,6 +63,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Draft settings state - local editing that doesn't auto-save
+  const [draftSettings, setDraftSettings] = useState<ReceptionistSettings>(settings);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Reset draft when actual settings change or category changes
+  React.useEffect(() => {
+    setDraftSettings(settings);
+    setHasUnsavedChanges(false);
+  }, [settings, activeCategory]);
+
   // Local state for color pickers to prevent excessive re-renders during drag
   const [localPrimaryColor, setLocalPrimaryColor] = useState(settings.brandPrimaryColor || '#00FFC8');
   const [localSecondaryColor, setLocalSecondaryColor] = useState(settings.brandSecondaryColor || '#1A1D24');
@@ -82,7 +92,31 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
     chartColorTheme: 'cyan'
   });
 
-  // Handle settings update with save feedback
+  // Handle draft changes (local only, no save)
+  const handleDraftChange = useCallback((updates: Partial<ReceptionistSettings>) => {
+    setDraftSettings((prev) => ({ ...prev, ...updates }));
+    setHasUnsavedChanges(true);
+  }, []);
+
+  // Save changes to actual settings
+  const handleSave = useCallback(() => {
+    setIsSaving(true);
+    setSettings(draftSettings);
+    setTimeout(() => {
+      setIsSaving(false);
+      setHasUnsavedChanges(false);
+      setToast({ message: 'Settings saved successfully', type: 'success' });
+    }, 300);
+  }, [draftSettings, setSettings]);
+
+  // Discard changes and reset to saved settings
+  const handleDiscard = useCallback(() => {
+    setDraftSettings(settings);
+    setHasUnsavedChanges(false);
+    setToast({ message: 'Changes discarded', type: 'success' });
+  }, [settings]);
+
+  // For immediate actions (toggles, logo upload, etc.)
   const handleSettingsChange = useCallback((updates: Partial<ReceptionistSettings>, showToast = true) => {
     setSettings((prevSettings) => {
       const newSettings = { ...prevSettings, ...updates };
@@ -255,8 +289,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Firm Name">
               <input
                 type="text"
-                value={settings.firmName}
-                onChange={(e) => handleSettingsChange({ firmName: e.target.value })}
+                value={draftSettings.firmName}
+                onChange={(e) => handleDraftChange({ firmName: e.target.value })}
                 className="form-input"
                 placeholder="Enter your firm name"
               />
@@ -330,7 +364,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                       max="200"
                       value={settings.logoSize || 64}
                       onChange={(e) => handleSettingsChange({ logoSize: parseInt(e.target.value) })}
-                      className="flex-1 h-2 bg-[#2D3139] rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                      className="flex-1 h-2 rounded-lg appearance-none cursor-pointer logo-size-slider"
                       style={{
                         background: `linear-gradient(to right, #06b6d4 0%, #06b6d4 ${((settings.logoSize || 64) - 20) / 180 * 100}%, #2D3139 ${((settings.logoSize || 64) - 20) / 180 * 100}%, #2D3139 100%)`
                       }}
@@ -633,8 +667,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="AI Assistant Name">
               <input
                 type="text"
-                value={settings.aiName}
-                onChange={(e) => handleSettingsChange({ aiName: e.target.value })}
+                value={draftSettings.aiName}
+                onChange={(e) => handleDraftChange({ aiName: e.target.value })}
                 className="form-input"
                 placeholder="Sarah"
               />
@@ -696,8 +730,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
             <FormGroup label="Voice Tone">
               <select
-                value={settings.tone}
-                onChange={(e) => handleSettingsChange({ tone: e.target.value })}
+                value={draftSettings.tone}
+                onChange={(e) => handleDraftChange({ tone: e.target.value })}
                 className="form-input form-select"
               >
                 <option value="Professional and Empathetic">Professional and Empathetic</option>
@@ -711,8 +745,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
             <FormGroup label="Language Style" hint="How the AI should speak">
               <select
-                value={settings.languageStyle}
-                onChange={(e) => handleSettingsChange({ languageStyle: e.target.value })}
+                value={draftSettings.languageStyle}
+                onChange={(e) => handleDraftChange({ languageStyle: e.target.value })}
                 className="form-input form-select"
               >
                 <option value="calm, clear, and natural human voice">Calm, clear, and natural</option>
@@ -725,16 +759,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
             <FormGroup label="Opening Line" hint="The first thing the AI says when answering">
               <textarea
-                value={settings.openingLine}
-                onChange={(e) => handleSettingsChange({ openingLine: e.target.value })}
+                value={draftSettings.openingLine}
+                onChange={(e) => handleDraftChange({ openingLine: e.target.value })}
                 className="form-input h-24 resize-none"
                 placeholder="Hi, thank you for calling..."
               />
             </FormGroup>
             <FormGroup label="Closing Line" hint="The message before ending the call">
               <textarea
-                value={settings.closingLine || ''}
-                onChange={(e) => handleSettingsChange({ closingLine: e.target.value })}
+                value={draftSettings.closingLine || ''}
+                onChange={(e) => handleDraftChange({ closingLine: e.target.value })}
                 className="form-input h-24 resize-none"
                 placeholder="Thank you for calling. Have a great day!"
               />
@@ -747,8 +781,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
           <div className="space-y-6">
             <FormGroup label="Firm Bio / Context" hint="Background information the AI uses to answer questions">
               <textarea
-                value={settings.firmBio}
-                onChange={(e) => handleSettingsChange({ firmBio: e.target.value })}
+                value={draftSettings.firmBio}
+                onChange={(e) => handleDraftChange({ firmBio: e.target.value })}
                 className="form-input h-32 resize-none"
                 placeholder="Describe your firm..."
               />
@@ -756,16 +790,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Response Delay (milliseconds)" hint="Add a slight pause to make responses feel more natural">
               <input
                 type="number"
-                value={settings.responseDelay}
-                onChange={(e) => handleSettingsChange({ responseDelay: parseInt(e.target.value) || 0 })}
+                value={draftSettings.responseDelay}
+                onChange={(e) => handleDraftChange({ responseDelay: parseInt(e.target.value) || 0 })}
                 className="form-input"
                 placeholder="0"
               />
             </FormGroup>
             <FormGroup label="Urgency Keywords" hint="Comma-separated words that trigger urgent case flagging">
               <textarea
-                value={settings.urgencyKeywords.join(', ')}
-                onChange={(e) => handleSettingsChange({ urgencyKeywords: e.target.value.split(',').map(k => k.trim()).filter(k => k) })}
+                value={draftSettings.urgencyKeywords?.join(', ') || ''}
+                onChange={(e) => handleDraftChange({ urgencyKeywords: e.target.value.split(',').map(k => k.trim()).filter(k => k) })}
                 className="form-input h-20 resize-none"
                 placeholder="court date, deadline, arrested, emergency"
               />
@@ -804,8 +838,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               <FormGroup label="Transfer Phone Number">
                 <input
                   type="tel"
-                  value={settings.transferNumber || ''}
-                  onChange={(e) => handleSettingsChange({ transferNumber: e.target.value })}
+                  value={draftSettings.transferNumber || ''}
+                  onChange={(e) => handleDraftChange({ transferNumber: e.target.value })}
                   className="form-input"
                   placeholder="+1 (555) 123-4567"
                 />
@@ -814,8 +848,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Max Call Duration (minutes)">
               <input
                 type="number"
-                value={settings.maxCallDuration || 30}
-                onChange={(e) => handleSettingsChange({ maxCallDuration: parseInt(e.target.value) || 30 })}
+                value={draftSettings.maxCallDuration || 30}
+                onChange={(e) => handleDraftChange({ maxCallDuration: parseInt(e.target.value) || 30 })}
                 className="form-input"
               />
             </FormGroup>
@@ -888,8 +922,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               <FormGroup label="Notification Email">
                 <input
                   type="email"
-                  value={settings.notificationEmail || ''}
-                  onChange={(e) => handleSettingsChange({ notificationEmail: e.target.value })}
+                  value={draftSettings.notificationEmail || ''}
+                  onChange={(e) => handleDraftChange({ notificationEmail: e.target.value })}
                   className="form-input"
                   placeholder="alerts@yourfirm.com"
                 />
@@ -905,8 +939,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
               <FormGroup label="Notification Phone">
                 <input
                   type="tel"
-                  value={settings.notificationPhone || ''}
-                  onChange={(e) => handleSettingsChange({ notificationPhone: e.target.value })}
+                  value={draftSettings.notificationPhone || ''}
+                  onChange={(e) => handleDraftChange({ notificationPhone: e.target.value })}
                   className="form-input"
                   placeholder="+1 (555) 123-4567"
                 />
@@ -994,8 +1028,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             {settings.legalDisclaimer && (
               <FormGroup label="Disclaimer Text">
                 <textarea
-                  value={settings.disclaimerText || ''}
-                  onChange={(e) => handleSettingsChange({ disclaimerText: e.target.value })}
+                  value={draftSettings.disclaimerText || ''}
+                  onChange={(e) => handleDraftChange({ disclaimerText: e.target.value })}
                   className="form-input h-24 resize-none"
                   placeholder="This call may be recorded..."
                 />
@@ -1010,8 +1044,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Data Retention (days)">
               <input
                 type="number"
-                value={settings.dataRetentionDays || 365}
-                onChange={(e) => handleSettingsChange({ dataRetentionDays: parseInt(e.target.value) || 365 })}
+                value={draftSettings.dataRetentionDays || 365}
+                onChange={(e) => handleDraftChange({ dataRetentionDays: parseInt(e.target.value) || 365 })}
                 className="form-input"
               />
             </FormGroup>
@@ -1114,8 +1148,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
             <FormGroup label="Admin Email">
               <input
                 type="email"
-                value={settings.adminEmail || ''}
-                onChange={(e) => handleSettingsChange({ adminEmail: e.target.value })}
+                value={draftSettings.adminEmail || ''}
+                onChange={(e) => handleDraftChange({ adminEmail: e.target.value })}
                 className="form-input"
                 placeholder="admin@yourfirm.com"
               />
@@ -1191,14 +1225,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
   return (
     <>
-      <div className="flex h-full gap-6">
+      <div className="flex h-full gap-6 flex-col lg:flex-row">
         {/* Sidebar */}
-        <div className="w-[260px] shrink-0 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden flex flex-col">
+        <div className="w-full lg:w-[260px] shrink-0 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden flex flex-col">
           <div className="p-5 border-b border-[#2D3139]">
             <h3 className="text-[16px] font-semibold text-white">Settings</h3>
             <p className="text-[13px] text-[#6B7280] mt-1">Configure your AI receptionist</p>
           </div>
-          <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+          <nav className="flex-1 overflow-y-auto p-3 space-y-1 max-h-[200px] lg:max-h-none">
             {categories.map((cat) => {
               const isActive = activeCategory === cat.id;
               return (
@@ -1216,7 +1250,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
         </div>
 
         {/* Content */}
-        <div className="flex-1 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden flex flex-col">
+        <div className="flex-1 min-w-0 bg-[#1A1D24] border border-[#2D3139] rounded-xl overflow-hidden flex flex-col">
           <div className="p-6 border-b border-[#2D3139] flex items-center justify-between">
             <div>
               <h2 className="text-[20px] font-semibold text-white">
@@ -1226,12 +1260,34 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
                 Configure {categories.find(c => c.id === activeCategory)?.label.toLowerCase()} settings for your AI receptionist
               </p>
             </div>
-            {isSaving && (
-              <div className="flex items-center gap-2 saving-indicator">
-                <div className="w-4 h-4 border-2 rounded-full animate-spin spinner-primary"></div>
-                <span className="text-sm">Saving...</span>
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {isSaving && (
+                <div className="flex items-center gap-2 saving-indicator">
+                  <div className="w-4 h-4 border-2 rounded-full animate-spin spinner-primary"></div>
+                  <span className="text-sm text-[#6B7280]">Saving...</span>
+                </div>
+              )}
+              {hasUnsavedChanges && !isSaving && (
+                <>
+                  <button
+                    onClick={handleDiscard}
+                    className="px-4 py-2 text-[#6B7280] hover:text-white text-sm font-medium transition"
+                  >
+                    Discard
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="px-5 py-2 text-black font-semibold text-sm rounded-lg transition flex items-center gap-2"
+                    style={{ backgroundColor: 'var(--primary-accent, #00FFC8)' }}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Changes
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto p-6">
             <div className="max-w-2xl">
@@ -1424,6 +1480,46 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
 
         .form-select option:hover {
           background-color: #2D3139;
+        }
+
+        /* Logo Size Slider - Fix visual responsiveness */
+        .logo-size-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 8px;
+          border-radius: 4px;
+          outline: none;
+        }
+
+        .logo-size-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #06b6d4;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          transition: transform 0.1s ease;
+        }
+
+        .logo-size-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.1);
+        }
+
+        .logo-size-slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #06b6d4;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          transition: transform 0.1s ease;
+        }
+
+        .logo-size-slider::-moz-range-thumb:hover {
+          transform: scale(1.1);
         }
       `}</style>
     </>
