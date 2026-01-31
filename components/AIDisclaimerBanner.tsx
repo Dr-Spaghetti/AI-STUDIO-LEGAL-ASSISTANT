@@ -8,7 +8,7 @@ interface AIDisclaimerBannerProps {
 }
 
 const AIDisclaimerBanner: React.FC<AIDisclaimerBannerProps> = ({
-  firmName = 'Legal Intake',
+  firmName = 'Lite DePalma Greenberg & Afanador',
   primaryColor = '#00FFC8',
   variant = 'minimal',
   onLearnMore,
@@ -45,33 +45,31 @@ const AIDisclaimerBanner: React.FC<AIDisclaimerBannerProps> = ({
 
   // Full variant - expandable
   return (
-    <div className="w-full bg-gradient-to-r from-[#F59E0B]/10 via-[#F59E0B]/5 to-[#F59E0B]/10 border-b border-[#F59E0B]/20">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="w-full bg-[#F59E0B]">
+      <div className="w-full px-4">
         {/* Collapsed state */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full py-2.5 flex items-center justify-between gap-3 group"
+          className="w-full py-2 flex items-center justify-between gap-3 group"
         >
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-2.5 py-1 bg-[#F59E0B]/20 rounded-full">
-              <svg className="w-3.5 h-3.5 text-[#F59E0B]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-              </svg>
-              <span className="text-[11px] font-bold text-[#F59E0B] uppercase tracking-wider">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-black/20 rounded-full">
+              <span className="text-[10px] text-black/80">✦</span>
+              <span className="text-[10px] font-bold text-black/90 uppercase tracking-wider">
                 AI Powered
               </span>
             </div>
-            <span className="text-[13px] text-white">
-              You are speaking with an AI assistant from <span style={{ color: primaryColor }}>{firmName}</span>
+            <span className="text-[12px] text-black/90 font-medium">
+              You are speaking with an AI assistant from <span className="font-semibold text-black">{firmName}, LLC</span>
             </span>
-            <span className="text-[13px] text-[#9CA3AF]">
+            <span className="text-[12px] text-black/70 font-medium">
               — This is not legal advice
             </span>
           </div>
-          <div className="flex items-center gap-2 text-[#6B7280] group-hover:text-white transition">
-            <span className="text-[12px]">{isExpanded ? 'Hide details' : 'More info'}</span>
+          <div className="flex items-center gap-1.5 text-black/70 group-hover:text-black transition">
+            <span className="text-[11px] font-medium">{isExpanded ? 'Hide details' : 'More info'}</span>
             <svg
-              className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -84,7 +82,7 @@ const AIDisclaimerBanner: React.FC<AIDisclaimerBannerProps> = ({
 
         {/* Expanded state */}
         {isExpanded && (
-          <div className="pb-4 pt-2 border-t border-[#F59E0B]/20 mt-1">
+          <div className="pb-4 pt-3 border-t border-black/20 mt-1 bg-[#0A0A0B] mx-[-16px] px-4 rounded-b-lg">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* What this is */}
               <div className="flex gap-3">

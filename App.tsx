@@ -94,7 +94,7 @@ const crmIntegrations = {
 
 const DEFAULT_SETTINGS: ReceptionistSettings = {
     aiName: 'Sarah',
-    firmName: 'Your Law Firm',
+    firmName: 'Lite DePalma Greenberg & Afanador',
     tone: 'Professional, warm, and empathetic',
     languageStyle: 'Speak naturally with a calm, confident tone. Be professional yet approachable. Listen actively and respond thoughtfully. Use clear language without legal jargon. Show genuine care for the caller\'s situation.',
     responseDelay: 400,
