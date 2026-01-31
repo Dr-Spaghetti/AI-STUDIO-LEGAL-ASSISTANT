@@ -154,7 +154,7 @@ const LiveIntakePanel: React.FC<LiveIntakePanelProps> = ({
       </div>
 
       {/* Firm Logo Watermark - Faded background */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.04]">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.15]">
         <div className="flex flex-col items-start gap-1 scale-[2.5]">
           <div className="text-white font-bold text-[16px] tracking-wide leading-tight">
             LITE <span className="font-bold">D</span>E<span className="font-bold">P</span>ALMA

@@ -60,15 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogo
     <div className="w-64 bg-[#050505] border-r border-[#1E2128] flex flex-col h-full shrink-0">
       {/* Logo Area - Firm branding with text logo */}
       <div className="py-5 px-5 border-b border-[#1E2128]">
-        {logoUrl ? (
-          <img
-            src={logoUrl}
-            alt={firmName}
-            className="h-16 object-contain"
-          />
-        ) : (
-          <FirmLogo />
-        )}
+        <FirmLogo />
       </div>
 
       {/* Navigation */}
