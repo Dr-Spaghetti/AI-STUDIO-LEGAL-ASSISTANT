@@ -24,7 +24,6 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, user, onLogout, settings }) => {
   const firmName = settings?.firmName || 'Lite DePalma Greenberg & Afanador';
-  const logoUrl = settings?.logoUrl;
   const primaryColor = settings?.brandPrimaryColor || '#00FFC8';
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuItems = [
