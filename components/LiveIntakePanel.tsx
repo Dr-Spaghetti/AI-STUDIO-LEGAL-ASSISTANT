@@ -153,6 +153,26 @@ const LiveIntakePanel: React.FC<LiveIntakePanelProps> = ({
           </div>
       </div>
 
+      {/* Firm Logo Watermark - Faded background */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.04]">
+        <div className="flex flex-col items-start gap-1 scale-[2.5]">
+          <div className="text-white font-bold text-[16px] tracking-wide leading-tight">
+            LITE <span className="font-bold">D</span>E<span className="font-bold">P</span>ALMA
+          </div>
+          <div className="text-white font-bold text-[16px] tracking-wide leading-tight">
+            GREENBERG &
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-[4px]">
+              <div className="w-8 h-[3px]" style={{ backgroundColor: 'var(--primary-accent, #00FFC8)' }}></div>
+              <div className="w-8 h-[3px]" style={{ backgroundColor: 'var(--primary-accent, #00FFC8)' }}></div>
+              <div className="w-8 h-[3px]" style={{ backgroundColor: 'var(--primary-accent, #00FFC8)' }}></div>
+            </div>
+            <span className="text-white font-bold text-[18px] tracking-[0.15em]">AFANADOR</span>
+          </div>
+        </div>
+      </div>
+
       {/* Background Effects */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full filter blur-[120px] opacity-[0.05] pointer-events-none"
