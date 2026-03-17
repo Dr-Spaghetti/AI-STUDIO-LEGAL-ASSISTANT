@@ -172,7 +172,9 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[28px] font-bold text-white mb-2">Case History</h1>
-            <p className="text-[15px] text-[#9CA3AF]">Complete record of all client intakes and cases</p>
+            <p className="text-[15px] text-[#9CA3AF]">
+              {isLiveData ? 'Live data from database' : 'Demo data (database not connected)'}
+            </p>
           </div>
           <button
             onClick={handleExportCSV}
@@ -324,7 +326,9 @@ const CaseHistoryPanel: React.FC<CaseHistoryPanelProps> = ({ currentClient, full
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-[17px] font-bold text-white tracking-wide">Recent Cases</h2>
-          <p className="text-[12px] text-[#6B7280] font-medium mt-0.5 uppercase tracking-wider">Case History</p>
+          <p className="text-[12px] text-[#6B7280] font-medium mt-0.5 uppercase tracking-wider">
+            {isLiveData ? 'Live Data' : 'DEMO MODE'}
+          </p>
         </div>
         <button
           onClick={handleRefresh}

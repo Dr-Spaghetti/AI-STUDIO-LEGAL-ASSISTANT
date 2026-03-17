@@ -218,7 +218,9 @@ const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({ fullPage = false, tenan
       {/* Header */}
       <div>
         <h2 className="text-[17px] font-bold text-white tracking-wide">Analytics & Performance</h2>
-        <p className="text-[12px] text-[#6B7280] font-medium mt-1 uppercase tracking-wider">Real-time metrics</p>
+        <p className="text-[12px] text-[#6B7280] font-medium mt-1 uppercase tracking-wider">
+          {isLiveData ? 'Live Data' : 'DEMO MODE'}
+        </p>
       </div>
 
       {/* Main Grid */}
