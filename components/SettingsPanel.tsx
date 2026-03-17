@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { ReceptionistSettings, Employee } from '../types';
-import { IntegrationSettings } from './settings/IntegrationSettings';
+
 
 interface SettingsPanelProps {
   settings: ReceptionistSettings;
@@ -1132,14 +1132,16 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ settings, setSettings }) 
         );
 
       case 'integrations':
-        // Use tenant from localStorage or default to 'demo'
-        const tenantSlug = localStorage.getItem('currentTenantSlug') || 'demo';
-        const tenantId = localStorage.getItem('currentTenantId') || 'demo-tenant-id';
         return (
-          <IntegrationSettings
-            tenantId={tenantId}
-            tenantSlug={tenantSlug}
-          />
+          <div className="space-y-6">
+            <div className="p-8 bg-[#0F1115] rounded-lg border border-[#2D3139] text-center">
+              <svg className="w-12 h-12 mx-auto mb-4 text-[#6B7280]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-2.03a4.5 4.5 0 00-1.242-7.244l4.5-4.5a4.5 4.5 0 016.364 6.364l-1.757 1.757" />
+              </svg>
+              <h4 className="text-[17px] font-semibold text-white mb-2">Integrations Coming Soon</h4>
+              <p className="text-[14px] text-[#6B7280]">CRM, calendar, and communication integrations will be available in a future update.</p>
+            </div>
+          </div>
         );
 
       case 'admin':
